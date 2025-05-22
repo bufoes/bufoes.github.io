@@ -1,6 +1,3 @@
----
----
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -76,52 +73,67 @@
   </header>
 
   <main>
+    <!-- ACM -->
     <details>
       <summary>ACM Meetings</summary>
       <ul>
-        {% assign acm_pdfs = site.static_files | where_exp:"file", "file.path contains '/acm/' and file.extname == '.pdf'" %}
+        {% assign acm_pdfs = site.static_files | where: "extname", ".pdf" %}
         {% for pdf in acm_pdfs %}
-        <li><a href="{{ pdf.path | relative_url }}" target="_blank">{{ pdf.name | remove: '.pdf' | replace: '-', ' ' | upcase }}</a></li>
+          {% if pdf.path contains "/acm/" %}
+            <li><a href="{{ pdf.path | relative_url }}" target="_blank">{{ pdf.name | remove: '.pdf' | replace: '-', ' ' | upcase }}</a></li>
+          {% endif %}
         {% endfor %}
       </ul>
     </details>
 
+    <!-- FBoS -->
     <details>
       <summary>FBoS Meetings</summary>
       <ul>
-        {% assign fbos_pdfs = site.static_files | where_exp:"file", "file.path contains '/fbos/' and file.extname == '.pdf'" %}
+        {% assign fbos_pdfs = site.static_files | where: "extname", ".pdf" %}
         {% for pdf in fbos_pdfs %}
-        <li><a href="{{ pdf.path | relative_url }}" target="_blank">{{ pdf.name | remove: '.pdf' | replace: '-', ' ' | upcase }}</a></li>
+          {% if pdf.path contains "/fbos/" %}
+            <li><a href="{{ pdf.path | relative_url }}" target="_blank">{{ pdf.name | remove: '.pdf' | replace: '-', ' ' | upcase }}</a></li>
+          {% endif %}
         {% endfor %}
       </ul>
     </details>
 
+    <!-- RAC -->
     <details>
       <summary>RAC Meetings</summary>
       <ul>
-        {% assign rac_pdfs = site.static_files | where_exp:"file", "file.path contains '/rac/' and file.extname == '.pdf'" %}
+        {% assign rac_pdfs = site.static_files | where: "extname", ".pdf" %}
         {% for pdf in rac_pdfs %}
-        <li><a href="{{ pdf.path | relative_url }}" target="_blank">{{ pdf.name | remove: '.pdf' | replace: '-', ' ' | upcase }}</a></li>
+          {% if pdf.path contains "/rac/" %}
+            <li><a href="{{ pdf.path | relative_url }}" target="_blank">{{ pdf.name | remove: '.pdf' | replace: '-', ' ' | upcase }}</a></li>
+          {% endif %}
         {% endfor %}
       </ul>
     </details>
 
+    <!-- FRC -->
     <details>
       <summary>FRC Meetings</summary>
       <ul>
-        {% assign frc_pdfs = site.static_files | where_exp:"file", "file.path contains '/frc/' and file.extname == '.pdf'" %}
+        {% assign frc_pdfs = site.static_files | where: "extname", ".pdf" %}
         {% for pdf in frc_pdfs %}
-        <li><a href="{{ pdf.path | relative_url }}" target="_blank">{{ pdf.name | remove: '.pdf' | replace: '-', ' ' | upcase }}</a></li>
+          {% if pdf.path contains "/frc/" %}
+            <li><a href="{{ pdf.path | relative_url }}" target="_blank">{{ pdf.name | remove: '.pdf' | replace: '-', ' ' | upcase }}</a></li>
+          {% endif %}
         {% endfor %}
       </ul>
     </details>
 
+    <!-- HERC -->
     <details>
       <summary>HERC Meetings</summary>
       <ul>
-        {% assign herc_pdfs = site.static_files | where_exp:"file", "file.path contains '/herc/' and file.extname == '.pdf'" %}
+        {% assign herc_pdfs = site.static_files | where: "extname", ".pdf" %}
         {% for pdf in herc_pdfs %}
-        <li><a href="{{ pdf.path | relative_url }}" target="_blank">{{ pdf.name | remove: '.pdf' | replace: '-', ' ' | upcase }}</a></li>
+          {% if pdf.path contains "/herc/" %}
+            <li><a href="{{ pdf.path | relative_url }}" target="_blank">{{ pdf.name | remove: '.pdf' | replace: '-', ' ' | upcase }}</a></li>
+          {% endif %}
         {% endfor %}
       </ul>
     </details>
