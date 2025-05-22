@@ -2,7 +2,6 @@
 layout: default
 title: Bahria Faculty Meeting Portal
 ---
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,34 +10,10 @@ title: Bahria Faculty Meeting Portal
 </head>
 <body>
   <h1>{{ page.title }}</h1>
-
-  {% comment %}
-    Split the categories string into a list
-  {% endcomment %}
   {% assign categories = "acm,fbos,rac,frc,herc" | split: "," %}
-
-  {% comment %}
-    Loop through each category
-  {% endcomment %}
   {% for cat in categories %}
-
-    {% comment %}
-      Build folder path string safely: e.g. "/acm/"
-    {% endcomment %}
-    {% assign folder = '/' | append: cat | append: '/' %}
-
-    {% comment %}
-      Capture a valid Liquid expression for filtering files
-    {% endcomment %}
-    {% capture filter_expr %}
-      file.extname == '.pdf' and file.path contains '{{ folder }}'
-    {% endcapture %}
-
-    {% comment %}
-      Filter static files using the expression above
-    {% endcomment %}
+    {% assign filter_expr = "file.extname == '.pdf' and file.path contains '/" | append: cat | append: "/'" %}
     {% assign filtered_pdfs = site.static_files | where_exp: "file", filter_expr %}
-
     <h2>{{ cat | upcase }} Meetings</h2>
     <ul>
       {% if filtered_pdfs.size > 0 %}
@@ -54,6 +29,5 @@ title: Bahria Faculty Meeting Portal
       {% endif %}
     </ul>
   {% endfor %}
-
 </body>
 </html>
