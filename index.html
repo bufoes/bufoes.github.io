@@ -1,6 +1,7 @@
 ---
-layout: default
+title: Bahria Faculty Meeting Portal
 ---
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,12 +18,12 @@ layout: default
     header {
       background-color: #002147; /* Bahria Navy Blue */
       color: white;
-      padding: 1.5rem;
+      padding: 2rem;
       text-align: center;
     }
     header h1 {
       margin: 0;
-      font-size: 1.8rem;
+      font-size: 2.2rem;
     }
     main {
       max-width: 900px;
@@ -76,15 +77,14 @@ layout: default
   </header>
 
   <main>
+
     <!-- ACM -->
     <details>
       <summary>ACM Meetings</summary>
       <ul>
-        {% assign acm_pdfs = site.static_files | where: "extname", ".pdf" %}
+        {% assign acm_pdfs = site.static_files | where_exp:"file", "file.path contains '/acm/' and file.extname == '.pdf'" %}
         {% for pdf in acm_pdfs %}
-          {% if pdf.path contains "/acm/" %}
-            <li><a href="{{ pdf.path | relative_url }}" target="_blank">{{ pdf.name | remove: '.pdf' | replace: '-', ' ' | upcase }}</a></li>
-          {% endif %}
+        <li><a href="{{ pdf.path | relative_url }}" target="_blank">{{ pdf.name | remove: '.pdf' | replace: '-', ' ' | upcase }}</a></li>
         {% endfor %}
       </ul>
     </details>
@@ -93,11 +93,9 @@ layout: default
     <details>
       <summary>FBoS Meetings</summary>
       <ul>
-        {% assign fbos_pdfs = site.static_files | where: "extname", ".pdf" %}
+        {% assign fbos_pdfs = site.static_files | where_exp:"file", "file.path contains '/fbos/' and file.extname == '.pdf'" %}
         {% for pdf in fbos_pdfs %}
-          {% if pdf.path contains "/fbos/" %}
-            <li><a href="{{ pdf.path | relative_url }}" target="_blank">{{ pdf.name | remove: '.pdf' | replace: '-', ' ' | upcase }}</a></li>
-          {% endif %}
+        <li><a href="{{ pdf.path | relative_url }}" target="_blank">{{ pdf.name | remove: '.pdf' | replace: '-', ' ' | upcase }}</a></li>
         {% endfor %}
       </ul>
     </details>
@@ -106,11 +104,9 @@ layout: default
     <details>
       <summary>RAC Meetings</summary>
       <ul>
-        {% assign rac_pdfs = site.static_files | where: "extname", ".pdf" %}
+        {% assign rac_pdfs = site.static_files | where_exp:"file", "file.path contains '/rac/' and file.extname == '.pdf'" %}
         {% for pdf in rac_pdfs %}
-          {% if pdf.path contains "/rac/" %}
-            <li><a href="{{ pdf.path | relative_url }}" target="_blank">{{ pdf.name | remove: '.pdf' | replace: '-', ' ' | upcase }}</a></li>
-          {% endif %}
+        <li><a href="{{ pdf.path | relative_url }}" target="_blank">{{ pdf.name | remove: '.pdf' | replace: '-', ' ' | upcase }}</a></li>
         {% endfor %}
       </ul>
     </details>
@@ -119,11 +115,9 @@ layout: default
     <details>
       <summary>FRC Meetings</summary>
       <ul>
-        {% assign frc_pdfs = site.static_files | where: "extname", ".pdf" %}
+        {% assign frc_pdfs = site.static_files | where_exp:"file", "file.path contains '/frc/' and file.extname == '.pdf'" %}
         {% for pdf in frc_pdfs %}
-          {% if pdf.path contains "/frc/" %}
-            <li><a href="{{ pdf.path | relative_url }}" target="_blank">{{ pdf.name | remove: '.pdf' | replace: '-', ' ' | upcase }}</a></li>
-          {% endif %}
+        <li><a href="{{ pdf.path | relative_url }}" target="_blank">{{ pdf.name | remove: '.pdf' | replace: '-', ' ' | upcase }}</a></li>
         {% endfor %}
       </ul>
     </details>
@@ -132,14 +126,13 @@ layout: default
     <details>
       <summary>HERC Meetings</summary>
       <ul>
-        {% assign herc_pdfs = site.static_files | where: "extname", ".pdf" %}
+        {% assign herc_pdfs = site.static_files | where_exp:"file", "file.path contains '/herc/' and file.extname == '.pdf'" %}
         {% for pdf in herc_pdfs %}
-          {% if pdf.path contains "/herc/" %}
-            <li><a href="{{ pdf.path | relative_url }}" target="_blank">{{ pdf.name | remove: '.pdf' | replace: '-', ' ' | upcase }}</a></li>
-          {% endif %}
+        <li><a href="{{ pdf.path | relative_url }}" target="_blank">{{ pdf.name | remove: '.pdf' | replace: '-', ' ' | upcase }}</a></li>
         {% endfor %}
       </ul>
     </details>
+
   </main>
 
 </body>
