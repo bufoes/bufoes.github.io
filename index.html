@@ -20,11 +20,11 @@ title: Bahria Faculty Meeting Portal
   <main>
     {% assign categories = "acm,fbos,rac,frc,herc" | split: "," %}
     {% for cat in categories %}
-      {% assign folder_path = "/" | append: cat | append: "/" %}
+      {% capture filter_expression %}file.extname == '.pdf' and file.path contains '/{{ cat }}/'{% endcapture %}
       <details>
         <summary>{{ cat | upcase }} Meetings</summary>
         <ul>
-          {% assign filtered_pdfs = site.static_files | where_exp: "file", "file.extname == '.pdf' and file.path contains folder_path" %}
+          {% assign filtered_pdfs = site.static_files | where_exp: "file", filter_expression %}
           {% if filtered_pdfs.size > 0 %}
             {% for pdf in filtered_pdfs %}
               <li>
