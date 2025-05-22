@@ -2,6 +2,7 @@
 layout: default
 title: Bahria Faculty Meeting Portal
 ---
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -32,9 +33,15 @@ title: Bahria Faculty Meeting Portal
       <details>
         <summary>{{ cat | upcase }} Meetings</summary>
         <ul>
-          {% assign pdfs = site.static_files | where_exp:"file", "file.path contains '/'+cat+'/' and file.extname == '.pdf'" %}
-          {% if pdfs.size > 0 %}
-            {% for pdf in pdfs %}
+          {% assign pdfs = site.static_files | where_exp:"file", "file.extname == '.pdf'" %}
+          {% assign filtered_pdfs = "" | split: "" %}
+          {% for pdf in pdfs %}
+            {% if pdf.path contains '/' | append: cat | append: '/' %}
+              {% assign filtered_pdfs = filtered_pdfs | push: pdf %}
+            {% endif %}
+          {% endfor %}
+          {% if filtered_pdfs.size > 0 %}
+            {% for pdf in filtered_pdfs %}
               <li>
                 <a href="{{ pdf.path | relative_url }}" target="_blank">
                   {{ pdf.name | remove: '.pdf' | replace: '-', ' ' | upcase }}
