@@ -7,22 +7,25 @@ title: Bahria Faculty Meeting Portal
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{{ page.title }}</title>
 </head>
 <body>
   <h1>{{ page.title }}</h1>
   {% assign categories = "acm,fbos,rac,frc,herc" | split: "," %}
   {% for cat in categories %}
-    {% capture filter_expression %}
+    {% capture filter_expr %}
       file.extname == '.pdf' and file.path contains '/{{ cat }}/'
     {% endcapture %}
-    {% assign filtered_pdfs = site.static_files | where_exp: "file", filter_expression %}
+    {% assign filtered_pdfs = site.static_files | where_exp: "file", filter_expr %}
     <h2>{{ cat | upcase }} Meetings</h2>
     <ul>
       {% if filtered_pdfs.size > 0 %}
         {% for pdf in filtered_pdfs %}
-          <li><a href="{{ pdf.path | relative_url }}" target="_blank">{{ pdf.name | remove: '.pdf' | replace: '-', ' ' | upcase }}</a></li>
+          <li>
+            <a href="{{ pdf.path | relative_url }}" target="_blank">
+              {{ pdf.name | remove: '.pdf' | replace: '-', ' ' | upcase }}
+            </a>
+          </li>
         {% endfor %}
       {% else %}
         <li>No PDFs found.</li>
