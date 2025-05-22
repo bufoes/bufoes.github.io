@@ -1,0 +1,61 @@
+---
+layout: default
+title: Bahria Faculty of Engineering Sciences Meeting Portal
+---
+
+<h1 style="text-align:center; color:#002147;">Bahria Faculty of Engineering Sciences Meeting Portal</h1>
+
+<details>
+  <summary>ACM Meetings</summary>
+  <ul>
+    {% for file in site.static_files %}
+      {% if file.path contains 'acm/' and file.extname == '.pdf' %}
+        <li><a href="{{ file.path | relative_url }}">{{ file.name }}</a></li>
+      {% endif %}
+    {% endfor %}
+  </ul>
+</details>
+
+<details>
+  <summary>FBoS Meetings</summary>
+  <ul>
+    {% for file in site.static_files %}
+      {% if file.path contains 'fbos/' and file.extname == '.pdf' %}
+        <li><a href="{{ file.path | relative_url }}">{{ file.name }}</a></li>
+      {% endif %}
+    {% endfor %}
+  </ul>
+</details>
+
+<details>
+  <summary>RAC Meetings</summary>
+  <ul>
+    {% for file in site.static_files %}
+      {% if file.path contains 'rac/' and file.extname == '.pdf' %}
+        <li><a href="{{ file.path | relative_url }}">{{ file.name }}</a></li>
+      {% endif %}
+    {% endfor %}
+  </ul>
+</details>
+
+<details>
+  <summary>FRC Meetings</summary>
+  <ul>
+    {% for file in site.static_files %}
+      {% if file.path contains 'frc/' and file.extname == '.pdf' %}
+        <li><a href="{{ file.path | relative_url }}">{{ file.name }}</a></li>
+      {% endif %}
+    {% endfor %}
+  </ul>
+</details>
+
+<details>
+  <summary>HERC Meetings</summary>
+  <ul>
+    {% for file in site.static_files %}
+      {% if file.path contains 'herc/' and file.extname == '.pdf' %}
+        <li><a href="{{ file.path | relative_url }}">{{ file.name }}</a></li>
+      {% endif %}
+    {% endfor %}
+  </ul>
+</details>
