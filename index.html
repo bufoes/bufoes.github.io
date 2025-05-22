@@ -2,6 +2,7 @@
 layout: default
 title: Bahria Faculty Meeting Portal
 ---
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,8 +13,7 @@ title: Bahria Faculty Meeting Portal
   <h1>{{ page.title }}</h1>
   {% assign categories = "acm,fbos,rac,frc,herc" | split: "," %}
   {% for cat in categories %}
-    {% assign filter_expr = "file.extname == '.pdf' and file.path contains '/" | append: cat | append: "/'" %}
-    {% assign filtered_pdfs = site.static_files | where_exp: "file", filter_expr %}
+    {% assign filtered_pdfs = site.static_files | where_exp: "file", "file.extname == '.pdf' and file.path contains cat" %}
     <h2>{{ cat | upcase }} Meetings</h2>
     <ul>
       {% if filtered_pdfs.size > 0 %}
@@ -25,7 +25,7 @@ title: Bahria Faculty Meeting Portal
           </li>
         {% endfor %}
       {% else %}
-        <li>No PDFs found.</li>
+        <li>No PDFs found for {{ cat | upcase }}.</li>
       {% endif %}
     </ul>
   {% endfor %}
