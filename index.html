@@ -16,7 +16,7 @@ title: Bahria Faculty Meeting Portal
   
   {% for cat in categories %}
     {% assign filter_str = '/cat/' | replace: 'cat', cat %}
-    {% assign filtered_pdfs = site.static_files | where_exp: "file", "file.extname == '.pdf' and file.path contains filter_str" %}
+    {% assign filtered_pdfs = site.static_files | where: "extname", ".pdf" | where_exp: "file", "file.path contains filter_str" %}
     
     <h2>{{ cat | upcase }} Meetings</h2>
     <ul>
@@ -26,7 +26,6 @@ title: Bahria Faculty Meeting Portal
             <a href="{{ pdf.path | relative_url }}" target="_blank">
               {{ pdf.name | remove: '.pdf' | replace: '-', ' ' | capitalize }}
             </a>
-            ({{ pdf.modified_time | date: "%b %d, %Y" }})
           </li>
         {% endfor %}
       {% else %}
@@ -34,9 +33,5 @@ title: Bahria Faculty Meeting Portal
       {% endif %}
     </ul>
   {% endfor %}
-
-  <footer>
-    <p>Last updated: {{ site.time | date: "%Y-%m-%d" }}</p>
-  </footer>
 </body>
 </html>
