@@ -10,17 +10,7 @@ title: Bahria Faculty Meeting Portal
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{{ site.title }}</title>
   <style>
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f9; margin: 0; padding: 0;}
-    header { background: #002147; color: white; padding: 1.5rem; text-align: center;}
-    header h1 { margin: 0; font-size: 1.8rem;}
-    main { max-width: 900px; margin: 2rem auto; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);}
-    details { margin-bottom: 1.5rem; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;}
-    summary { background: #003366; color: white; padding: 1rem; font-weight: bold; font-size: 1.1rem; cursor: pointer; user-select: none;}
-    summary:hover { background: #1a4d8f;}
-    ul { list-style: none; margin: 0; padding: 1rem 1.5rem; background: #f9fafc;}
-    li { margin-bottom: 0.5rem;}
-    a { color: #002147; text-decoration: none;}
-    a:hover { text-decoration: underline; color: #0047ab;}
+    /* Your CSS here */
   </style>
 </head>
 <body>
@@ -30,10 +20,11 @@ title: Bahria Faculty Meeting Portal
   <main>
     {% assign categories = "acm,fbos,rac,frc,herc" | split: "," %}
     {% for cat in categories %}
+      {% assign folder_path = "/" | append: cat | append: "/" %}
       <details>
         <summary>{{ cat | upcase }} Meetings</summary>
         <ul>
-          {% assign filtered_pdfs = site.static_files | where_exp: "file", "file.extname == '.pdf' and file.path contains '/' | append: cat | append: '/'" %}
+          {% assign filtered_pdfs = site.static_files | where_exp: "file", "file.extname == '.pdf' and file.path contains folder_path" %}
           {% if filtered_pdfs.size > 0 %}
             {% for pdf in filtered_pdfs %}
               <li>
