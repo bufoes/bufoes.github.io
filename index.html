@@ -1,61 +1,128 @@
----
-layout: default
-title: Bahria Faculty of Engineering Sciences Meeting Portal
----
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bahria Faculty of Engineering Sciences Meeting Portal</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f6f9;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #002147; /* Bahria Navy Blue */
+      color: white;
+      padding: 1.5rem;
+      text-align: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.8rem;
+    }
+    main {
+      max-width: 900px;
+      margin: 2rem auto;
+      background-color: #ffffff;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    details {
+      margin-bottom: 1.5rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    summary {
+      background-color: #003366;
+      color: white;
+      padding: 1rem;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      user-select: none;
+    }
+    summary:hover {
+      background-color: #1a4d8f;
+    }
+    ul {
+      list-style-type: none;
+      padding: 1rem 1.5rem;
+      margin: 0;
+      background-color: #f9fafc;
+    }
+    li {
+      margin-bottom: 0.5rem;
+    }
+    a {
+      color: #002147;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+      color: #0047ab;
+    }
+  </style>
+</head>
+<body>
 
-<h1 style="text-align:center; color:#002147;">Bahria Faculty of Engineering Sciences Meeting Portal</h1>
+  <header>
+    <h1>Bahria Faculty of Engineering Sciences Meeting Portal</h1>
+  </header>
 
-<details>
-  <summary>ACM Meetings</summary>
-  <ul>
-    {% for file in site.static_files %}
-      {% if file.path contains 'acm/' and file.extname == '.pdf' %}
-        <li><a href="{{ file.path | relative_url }}">{{ file.name }}</a></li>
-      {% endif %}
-    {% endfor %}
-  </ul>
-</details>
+  <main>
+    <details>
+      <summary>ACM Meetings</summary>
+      <ul>
+        {% assign acm_pdfs = site.static_files | where_exp:"file", "file.path contains '/acm/' and file.extname == '.pdf'" %}
+        {% for pdf in acm_pdfs %}
+        <li><a href="{{ pdf.path | relative_url }}" target="_blank">{{ pdf.name | remove: '.pdf' | replace: '-', ' ' | upcase }}</a></li>
+        {% endfor %}
+      </ul>
+    </details>
 
-<details>
-  <summary>FBoS Meetings</summary>
-  <ul>
-    {% for file in site.static_files %}
-      {% if file.path contains 'fbos/' and file.extname == '.pdf' %}
-        <li><a href="{{ file.path | relative_url }}">{{ file.name }}</a></li>
-      {% endif %}
-    {% endfor %}
-  </ul>
-</details>
+    <details>
+      <summary>FBoS Meetings</summary>
+      <ul>
+        {% assign fbos_pdfs = site.static_files | where_exp:"file", "file.path contains '/fbos/' and file.extname == '.pdf'" %}
+        {% for pdf in fbos_pdfs %}
+        <li><a href="{{ pdf.path | relative_url }}" target="_blank">{{ pdf.name | remove: '.pdf' | replace: '-', ' ' | upcase }}</a></li>
+        {% endfor %}
+      </ul>
+    </details>
 
-<details>
-  <summary>RAC Meetings</summary>
-  <ul>
-    {% for file in site.static_files %}
-      {% if file.path contains 'rac/' and file.extname == '.pdf' %}
-        <li><a href="{{ file.path | relative_url }}">{{ file.name }}</a></li>
-      {% endif %}
-    {% endfor %}
-  </ul>
-</details>
+    <details>
+      <summary>RAC Meetings</summary>
+      <ul>
+        {% assign rac_pdfs = site.static_files | where_exp:"file", "file.path contains '/rac/' and file.extname == '.pdf'" %}
+        {% for pdf in rac_pdfs %}
+        <li><a href="{{ pdf.path | relative_url }}" target="_blank">{{ pdf.name | remove: '.pdf' | replace: '-', ' ' | upcase }}</a></li>
+        {% endfor %}
+      </ul>
+    </details>
 
-<details>
-  <summary>FRC Meetings</summary>
-  <ul>
-    {% for file in site.static_files %}
-      {% if file.path contains 'frc/' and file.extname == '.pdf' %}
-        <li><a href="{{ file.path | relative_url }}">{{ file.name }}</a></li>
-      {% endif %}
-    {% endfor %}
-  </ul>
-</details>
+    <details>
+      <summary>FRC Meetings</summary>
+      <ul>
+        {% assign frc_pdfs = site.static_files | where_exp:"file", "file.path contains '/frc/' and file.extname == '.pdf'" %}
+        {% for pdf in frc_pdfs %}
+        <li><a href="{{ pdf.path | relative_url }}" target="_blank">{{ pdf.name | remove: '.pdf' | replace: '-', ' ' | upcase }}</a></li>
+        {% endfor %}
+      </ul>
+    </details>
 
-<details>
-  <summary>HERC Meetings</summary>
-  <ul>
-    {% for file in site.static_files %}
-      {% if file.path contains 'herc/' and file.extname == '.pdf' %}
-        <li><a href="{{ file.path | relative_url }}">{{ file.name }}</a></li>
-      {% endif %}
-    {% endfor %}
-  </ul>
-</details>
+    <details>
+      <summary>HERC Meetings</summary>
+      <ul>
+        {% assign herc_pdfs = site.static_files | where_exp:"file", "file.path contains '/herc/' and file.extname == '.pdf'" %}
+        {% for pdf in herc_pdfs %}
+        <li><a href="{{ pdf.path | relative_url }}" target="_blank">{{ pdf.name | remove: '.pdf' | replace: '-', ' ' | upcase }}</a></li>
+        {% endfor %}
+      </ul>
+    </details>
+  </main>
+
+</body>
+</html>
