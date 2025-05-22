@@ -33,13 +33,7 @@ title: Bahria Faculty Meeting Portal
       <details>
         <summary>{{ cat | upcase }} Meetings</summary>
         <ul>
-          {% assign pdfs = site.static_files | where_exp:"file", "file.extname == '.pdf'" %}
-          {% assign filtered_pdfs = "" | split: "" %}
-          {% for pdf in pdfs %}
-            {% if pdf.path contains '/' | append: cat | append: '/' %}
-              {% assign filtered_pdfs = filtered_pdfs | push: pdf %}
-            {% endif %}
-          {% endfor %}
+          {% assign filtered_pdfs = site.static_files | where_exp: "file", "file.extname == '.pdf' and file.path contains '/' | append: cat | append: '/'" %}
           {% if filtered_pdfs.size > 0 %}
             {% for pdf in filtered_pdfs %}
               <li>
