@@ -1,100 +1,86 @@
 ---
 layout: default
-title: Bahria Faculty Meeting Portal
+title: Bahria Faculty of Engineering Sciences Meeting Portal
 ---
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>{{ page.title }}</title>
   <style>
-    :root {
-      --primary: #2c3e50;
-      --secondary: #3498db;
-      --light: #ecf0f1;
-      --dark: #2c3e50;
-      --success: #27ae60;
-    }
-    
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      line-height: 1.6;
-      color: var(--dark);
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
-      background-color: #f9f9f9;
-    }
-    
-    header {
-      background-color: var(--primary);
-      color: white;
-      padding: 20px;
-      border-radius: 5px;
-      margin-bottom: 30px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    
-    h1 {
+      background-color: #f4f6f9;
       margin: 0;
-      font-size: 2rem;
-    }
-    
-    h2 {
-      color: var(--primary);
-      border-bottom: 2px solid var(--secondary);
-      padding-bottom: 5px;
-      margin-top: 30px;
-    }
-    
-    ul {
-      list-style: none;
       padding: 0;
     }
-    
+    header {
+      background-color: #002147; /* Bahria Navy Blue */
+      color: white;
+      padding: 1.5rem;
+      text-align: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.8rem;
+    }
+    main {
+      max-width: 900px;
+      margin: 2rem auto;
+      background-color: #ffffff;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    details {
+      margin-bottom: 1.5rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    summary {
+      background-color: #003366;
+      color: white;
+      padding: 1rem;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      user-select: none;
+    }
+    summary:hover {
+      background-color: #1a4d8f;
+    }
+    ul {
+      list-style-type: none;
+      padding: 1rem 1.5rem;
+      margin: 0;
+      background-color: #f9fafc;
+    }
     li {
-      background: white;
-      margin-bottom: 10px;
-      padding: 15px;
-      border-radius: 5px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      transition: transform 0.2s;
+      margin-bottom: 0.5rem;
     }
-    
-    li:hover {
-      transform: translateX(5px);
-    }
-    
     a {
-      color: var(--secondary);
+      color: #002147;
       text-decoration: none;
-      font-weight: 500;
     }
-    
     a:hover {
       text-decoration: underline;
+      color: #0047ab;
     }
-    
     .no-files {
-      color: #7f8c8d;
+      color: #666;
       font-style: italic;
-    }
-    
-    footer {
-      margin-top: 40px;
-      text-align: center;
-      color: #7f8c8d;
-      font-size: 0.9rem;
     }
   </style>
 </head>
 <body>
+
   <header>
     <h1>{{ page.title }}</h1>
   </header>
-  
+
   <main>
     {% assign categories = "acm,fbos,rac,frc,herc" | split: "," %}
     
@@ -102,14 +88,14 @@ title: Bahria Faculty Meeting Portal
       {% assign filter_str = '/cat/' | replace: 'cat', cat %}
       {% assign filtered_pdfs = site.static_files | where: "extname", ".pdf" | where_exp: "file", "file.path contains filter_str" %}
       
-      <section>
-        <h2>{{ cat | upcase }} Meetings</h2>
+      <details>
+        <summary>{{ cat | upcase }} Meetings</summary>
         <ul>
           {% if filtered_pdfs.size > 0 %}
             {% for pdf in filtered_pdfs %}
               <li>
                 <a href="{{ pdf.path | relative_url }}" target="_blank">
-                  {{ pdf.name | remove: '.pdf' | replace: '-', ' ' | capitalize }}
+                  {{ pdf.name | remove: '.pdf' | replace: '_', ' ' | replace: '-', ' ' | capitalize }}
                 </a>
               </li>
             {% endfor %}
@@ -117,12 +103,9 @@ title: Bahria Faculty Meeting Portal
             <li class="no-files">No meetings found for {{ cat | upcase }}</li>
           {% endif %}
         </ul>
-      </section>
+      </details>
     {% endfor %}
   </main>
-  
-  <footer>
-    <p>Last updated: {{ site.time | date: "%B %d, %Y" }}</p>
-  </footer>
+
 </body>
 </html>
