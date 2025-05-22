@@ -6,28 +6,37 @@ title: Bahria Faculty Meeting Portal
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>{{ page.title }}</title>
 </head>
 <body>
   <h1>{{ page.title }}</h1>
+  
   {% assign categories = "acm,fbos,rac,frc,herc" | split: "," %}
+  
   {% for cat in categories %}
-    {% assign filtered_pdfs = site.static_files | where_exp: "file", "file.extname == '.pdf' and file.path contains cat" %}
+    {% assign filter_str = '/cat/' | replace: 'cat', cat %}
+    {% assign filtered_pdfs = site.static_files | where_exp: "file", "file.extname == '.pdf' and file.path contains filter_str" %}
+    
     <h2>{{ cat | upcase }} Meetings</h2>
     <ul>
       {% if filtered_pdfs.size > 0 %}
         {% for pdf in filtered_pdfs %}
           <li>
             <a href="{{ pdf.path | relative_url }}" target="_blank">
-              {{ pdf.name | remove: '.pdf' | replace: '-', ' ' | upcase }}
+              {{ pdf.name | remove: '.pdf' | replace: '-', ' ' | capitalize }}
             </a>
+            ({{ pdf.modified_time | date: "%b %d, %Y" }})
           </li>
         {% endfor %}
       {% else %}
-        <li>No PDFs found for {{ cat | upcase }}.</li>
+        <li>No meetings found for {{ cat | upcase }}</li>
       {% endif %}
     </ul>
   {% endfor %}
+
+  <footer>
+    <p>Last updated: {{ site.time | date: "%Y-%m-%d" }}</p>
+  </footer>
 </body>
 </html>
