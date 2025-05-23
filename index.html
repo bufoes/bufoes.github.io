@@ -133,7 +133,7 @@ title: Bahria Faculty of Engineering Sciences Meeting Portal
   {% assign categories = "acm,fbos,rac,frc,herc" | split: "," %}
   {% for cat in categories %}
     {% assign folder_path = cat | prepend: '/' | append: '/' %}
-    {% assign filtered_pdfs = site.static_files | where: "extname", ".pdf" | where_exp: "file", "file.path contains folder_path" | sort: "modified_time" | reverse %}
+    {% assign filtered_pdfs = site.static_files | where: "extname", ".pdf" | where_exp: "file", "file.path contains folder_path" | sort: "name" %}
     
     <details>
       <summary>
