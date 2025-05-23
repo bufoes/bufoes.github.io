@@ -13,14 +13,16 @@ jobs:
   zip:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # Needed for pushing changes
+      contents: write
+      pages: write    # Required for GitHub Pages repos
+      id-token: write # Required for GitHub Pages
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.PAT }}
+          token: ${{ secrets.PAT }}  # PAT with repo scope
 
       - name: Zip folders
         run: |
@@ -32,17 +34,16 @@ jobs:
 
       - name: Commit and push changes
         run: |
+          # Configure git
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-          git remote set-url origin https://github.com/bufoes/bufoes.github.io.git
-          git config credential.helper store
-          echo "https://${{ secrets.PAT }}:@github.com" > ~/.git-credentials
-
+          
+          # Add all changes
           git add .
-          if git diff --cached --quiet; then
-            echo "No changes to commit"
-          else
+          
+          # Commit and push if there are changes
+          if ! git diff --cached --quiet; then
             git commit -m "Auto-zipped meeting folders on push"
+            git remote set-url origin https://x-access-token:${{ secrets.PAT }}@github.com/bufoes/bufoes.github.io.git
             git push origin main
           fi
