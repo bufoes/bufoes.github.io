@@ -68,8 +68,8 @@ title: Bahria Faculty of Engineering Sciences Meeting Portal
       cursor: pointer;
       user-select: none;
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      /* Removed justify-content: space-between */
     }
 
     summary::before {
@@ -84,6 +84,11 @@ title: Bahria Faculty of Engineering Sciences Meeting Portal
 
     summary:hover {
       background-color: #1a4d8f;
+    }
+
+    summary .category-title {
+      flex: 1;
+      text-align: left;
     }
 
     .download-all {
@@ -164,7 +169,7 @@ title: Bahria Faculty of Engineering Sciences Meeting Portal
     
     <details>
       <summary>
-        {{ cat | upcase }} Meetings ({{ filtered_pdfs.size }})
+        <span class="category-title">{{ cat | upcase }} Meetings ({{ filtered_pdfs.size }})</span>
         {% if zip_file %}
           <a href="#" class="download-all" onclick="downloadZip(event, '{{ cat }}')">Download All (ZIP)</a>
         {% else %}
