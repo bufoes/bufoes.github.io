@@ -14,8 +14,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.PERSONAL_TOKEN }}
 
       - name: Zip folders
         run: |
@@ -25,10 +27,12 @@ jobs:
             fi
           done
 
-      - name: Commit and push ZIPs
+      - name: Commit and push ZIP files
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add */*.zip
-          git commit -m "Auto-zipped folders on push"
+          git add acm/acm.zip fbos/fbos.zip rac/rac.zip frc/frc.zip herc/herc.zip
+          git diff --cached --quiet || git commit -m "Auto-zipped meeting folders"
           git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.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 }}
