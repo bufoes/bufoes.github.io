@@ -1,49 +1,50 @@
-name: Auto Zip Meeting Folders
+name: Auto Zip PDFs from Meeting Folders
 
 on:
   push:
     paths:
-      - 'acm/**'
-      - 'fbos/**'
-      - 'rac/**'
-      - 'frc/**'
-      - 'herc/**'
+      - 'acm/**/*.pdf'
+      - 'fbos/**/*.pdf'
+      - 'rac/**/*.pdf'
+      - 'frc/**/*.pdf'
+      - 'herc/**/*.pdf'
 
 jobs:
-  zip:
+  zip-pdfs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pages: write    # Required for GitHub Pages repos
-      id-token: write # Required for GitHub Pages
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.PAT }}  # PAT with repo scope
+          token: ${{ secrets.PAT }}  # Requires 'repo' scope
 
-      - name: Zip folders
+      - name: Create zips directory
+        run: mkdir -p zips
+
+      - name: Zip only PDFs from each folder
         run: |
           for dir in acm fbos rac frc herc; do
             if [ -d "$dir" ]; then
-              zip -r "${dir}/${dir}.zip" "$dir" -x "*.zip"
+              find "$dir" -type f -name "*.pdf" > files.txt
+              if [ -s files.txt ]; then
+                zip -@ "zips/${dir}.zip" < files.txt
+              fi
             fi
           done
 
-      - name: Commit and push changes
+      - name: Commit and push PDF zips
         run: |
-          # Configure git
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          
-          # Add all changes
-          git add .
-          
-          # Commit and push if there are changes
+
+          git add zips/
+
           if ! git diff --cached --quiet; then
-            git commit -m "Auto-zipped meeting folders on push"
+            git commit -m "Zipped updated PDFs from meeting folders"
             git remote set-url origin https://x-access-token:${{ secrets.PAT }}@github.com/bufoes/bufoes.github.io.git
             git push origin main
           fi
