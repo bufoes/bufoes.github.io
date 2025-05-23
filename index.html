@@ -10,68 +10,148 @@ title: Bahria Faculty of Engineering Sciences Meeting Portal
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>{{ page.title }}</title>
   <style>
+    :root {
+      --bahria-blue: #002147;
+      --bahria-dark-blue: #003366;
+      --bahria-light-blue: #1a4d8f;
+      --bahria-green: #27ae60;
+      --bahria-light-green: #2ecc71;
+      --text-dark: #333;
+      --text-light: #666;
+      --bg-light: #f4f6f9;
+      --card-bg: #ffffff;
+      --card-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f4f6f9;
+      background-color: var(--bg-light);
       margin: 0;
       padding: 0;
+      color: var(--text-dark);
+      line-height: 1.6;
     }
+    
     header {
-      background-color: #002147; /* Bahria Navy Blue */
+      background-color: var(--bahria-blue);
       color: white;
       padding: 1.5rem;
       text-align: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
+    
     header h1 {
       margin: 0;
       font-size: 1.8rem;
     }
+    
     main {
       max-width: 900px;
       margin: 2rem auto;
-      background-color: #ffffff;
-      padding: 2rem;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 0 1rem;
     }
-    details {
+    
+    .category-container {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      box-shadow: var(--card-shadow);
       margin-bottom: 1.5rem;
-      border: 1px solid #ddd;
-      border-radius: 8px;
       overflow: hidden;
     }
-    summary {
-      background-color: #003366;
+    
+    .category-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: var(--bahria-dark-blue);
       color: white;
-      padding: 1rem;
-      font-size: 1.1rem;
-      font-weight: bold;
+      padding: 1rem 1.5rem;
       cursor: pointer;
       user-select: none;
     }
-    summary:hover {
-      background-color: #1a4d8f;
+    
+    .category-header:hover {
+      background-color: var(--bahria-light-blue);
     }
-    ul {
+    
+    .category-title {
+      font-size: 1.1rem;
+      font-weight: bold;
+      margin: 0;
+    }
+    
+    .download-all {
+      background-color: var(--bahria-green);
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      text-decoration: none;
+      transition: background-color 0.2s;
+    }
+    
+    .download-all:hover {
+      background-color: var(--bahria-light-green);
+    }
+    
+    .pdf-list {
       list-style-type: none;
       padding: 1rem 1.5rem;
       margin: 0;
-      background-color: #f9fafc;
+      background-color: rgba(249, 250, 252, 0.8);
     }
-    li {
-      margin-bottom: 0.5rem;
+    
+    .pdf-item {
+      padding: 0.75rem 0;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-    a {
-      color: #002147;
+    
+    .pdf-item:last-child {
+      border-bottom: none;
+    }
+    
+    .pdf-link {
+      color: var(--bahria-blue);
       text-decoration: none;
+      flex-grow: 1;
     }
-    a:hover {
+    
+    .pdf-link:hover {
       text-decoration: underline;
-      color: #0047ab;
+      color: var(--bahria-light-blue);
     }
+    
+    .file-date {
+      color: var(--text-light);
+      font-size: 0.85rem;
+      margin-left: 0.5rem;
+    }
+    
+    .download-icon {
+      color: var(--text-light);
+      margin-left: 0.5rem;
+      font-size: 0.9rem;
+    }
+    
     .no-files {
-      color: #666;
+      color: var(--text-light);
       font-style: italic;
+      padding: 1rem 0;
+    }
+    
+    @media (max-width: 600px) {
+      .category-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+      
+      .download-all {
+        align-self: flex-end;
+      }
     }
   </style>
 </head>
@@ -85,27 +165,85 @@ title: Bahria Faculty of Engineering Sciences Meeting Portal
     {% assign categories = "acm,fbos,rac,frc,herc" | split: "," %}
     
     {% for cat in categories %}
-      {% assign filter_str = '/cat/' | replace: 'cat', cat %}
-      {% assign filtered_pdfs = site.static_files | where: "extname", ".pdf" | where_exp: "file", "file.path contains filter_str" %}
+      {% assign folder_path = cat | prepend: '/' | append: '/' %}
+      {% assign filtered_pdfs = site.static_files | 
+                              where: "extname", ".pdf" | 
+                              where_exp: "file", "file.path contains folder_path" |
+                              sort: "modified_time" |
+                              reverse %}
       
-      <details>
-        <summary>{{ cat | upcase }} Meetings</summary>
-        <ul>
+      <div class="category-container">
+        <div class="category-header" onclick="this.parentElement.classList.toggle('expanded')">
+          <h2 class="category-title">
+            {{ cat | upcase }} Meetings ({{ filtered_pdfs.size }})
+          </h2>
+          {% if filtered_pdfs.size > 0 %}
+            <a href="#" class="download-all" onclick="downloadAllPDFs('{{ cat }}'); return false;">
+              Download All
+            </a>
+          {% endif %}
+        </div>
+        
+        <div class="pdf-list">
           {% if filtered_pdfs.size > 0 %}
             {% for pdf in filtered_pdfs %}
-              <li>
-                <a href="{{ pdf.path | relative_url }}" target="_blank">
+              <div class="pdf-item">
+                <a href="{{ pdf.path | relative_url }}" download="{{ pdf.name }}" class="pdf-link" target="_blank">
                   {{ pdf.name | remove: '.pdf' | replace: '_', ' ' | replace: '-', ' ' | capitalize }}
+                  <span class="file-date">({{ pdf.modified_time | date: "%b %d, %Y" }})</span>
                 </a>
-              </li>
+                <span class="download-icon" title="Download">↓</span>
+              </div>
             {% endfor %}
           {% else %}
-            <li class="no-files">No meetings found for {{ cat | upcase }}</li>
+            <div class="no-files">No meetings found for {{ cat | upcase }}</div>
           {% endif %}
-        </ul>
-      </details>
+        </div>
+      </div>
     {% endfor %}
   </main>
+
+  <script>
+    // Download all PDFs in a category
+    function downloadAllPDFs(category) {
+      // Get all PDF links in this category
+      const categoryElement = document.querySelector(`.category-title:contains('${category.toUpperCase()}')`).closest('.category-container');
+      const pdfLinks = categoryElement.querySelectorAll('.pdf-link');
+      
+      // Confirm with user
+      if (!confirm(`Download all ${pdfLinks.length} PDFs from ${category.toUpperCase()}?`)) {
+        return;
+      }
+      
+      // Download each file with a delay
+      pdfLinks.forEach((link, index) => {
+        setTimeout(() => {
+          // Create hidden iframe to trigger download
+          const iframe = document.createElement('iframe');
+          iframe.style.display = 'none';
+          iframe.src = link.href;
+          document.body.appendChild(iframe);
+          
+          // Remove iframe after download starts
+          setTimeout(() => {
+            document.body.removeChild(iframe);
+          }, 1000);
+        }, index * 1500); // 1.5 second delay between downloads
+      });
+      
+      // Show completion message
+      setTimeout(() => {
+        alert(`Started downloading ${pdfLinks.length} files from ${category.toUpperCase()}.`);
+      }, 500);
+    }
+    
+    // Open all categories by default
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.category-container').forEach(container => {
+        container.classList.add('expanded');
+      });
+    });
+  </script>
 
 </body>
 </html>
