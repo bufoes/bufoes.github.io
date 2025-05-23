@@ -21,7 +21,7 @@ jobs:
           token: ${{ secrets.PAT }}
 
       - name: Install dependencies
-        run: sudo apt-get install -y zip
+        run: sudo apt-get update && sudo apt-get install -y zip
 
       - name: Create zips only if PDFs changed
         run: |
@@ -29,16 +29,39 @@ jobs:
           changed=false
 
           for dir in acm fbos rac frc herc; do
-            [ -d "$dir" ] || continue
+            if [ ! -d "$dir" ]; then
+              echo "Skipping $dir: directory does not exist"
+              continue
+            fi
+
             hash_file=".checksums/$dir.sha"
-            current_hash=$(find "$dir" -type f -name "*.pdf" -print0 | xargs -0 stat --format '%n %s' | sha256sum | cut -d' ' -f1)
-            previous_hash=$(cat "$hash_file" 2>/dev/null || echo "")
+
+            # Compute hash of all PDFs in folder (names + sizes)
+            current_hash=$(find "$dir" -type f -name "*.pdf" -print0 | \
+              xargs -0 stat --format '%n %s' | sha256sum | cut -d' ' -f1)
+
+            previous_hash=""
+            if [ -f "$hash_file" ]; then
+              previous_hash=$(cat "$hash_file")
+            fi
 
             if [ "$current_hash" != "$previous_hash" ]; then
               echo "Zipping $dir: changes detected"
-              zip -r -j "zips/$dir.zip" "$dir"/*.pdf
+
+              # Only zip if PDFs exist
+              pdf_count=$(find "$dir" -type f -name "*.pdf" | wc -l)
+              if [ "$pdf_count" -gt 0 ]; then
+                # Zip PDFs inside the directory, store zip in ../zips folder
+                (cd "$dir" && zip -r "../zips/$dir.zip" . -i '*.pdf')
+                # Copy zip to the directory as well
+                cp "zips/$dir.zip" "$dir/$dir.zip"
+              else
+                echo "No PDFs found in $dir, skipping zip."
+                # Remove old zip if exists
+                rm -f "zips/$dir.zip" "$dir/$dir.zip"
+              fi
+
               echo "$current_hash" > "$hash_file"
-              cp "zips/$dir.zip" "$dir/$dir.zip"
               changed=true
             else
               echo "No change in $dir"
@@ -49,7 +72,13 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git add .checksums zips */*.zip
-            git commit -m "Selective ZIP update based on PDF changes"
-            git remote set-url origin https://x-access-token:${{ secrets.PAT }}@github.com/${{ github.repository }}
-            git push
+            if ! git diff --cached --quiet; then
+              git commit -m "Selective ZIP update based on PDF changes"
+              git remote set-url origin https://x-access-token:${{ secrets.PAT }}@github.com/${{ github.repository }}
+              git push
+            else
+              echo "No changes to commit."
+            fi
+          else
+            echo "No ZIP updates needed."
           fi
