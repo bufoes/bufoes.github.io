@@ -1,4 +1,4 @@
-name: Auto Zip PDFs from Meeting Folders
+name: Auto Zip PDFs for GitHub Pages
 
 on:
   push:
@@ -24,27 +24,39 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y zip unzip
+          sudo apt-get install -y zip unzip p7zip-full
 
-      - name: Create or update zips with validation
+      - name: Create robust zips
         run: |
           set -euo pipefail
           mkdir -p zips .checksums
           changed=false
 
-          # Initialize array of directories we expect to process
+          # Initialize directories to process
           expected_dirs=("acm" "fbos" "rac" "frc" "herc")
 
-          # Function to validate zip files
-          validate_zip() {
-            local zip_file=$1
-            echo "Validating ZIP file: $zip_file"
+          # Function to create GitHub Pages compatible zip
+          create_robust_zip() {
+            local src_dir=$1
+            local zip_file=$2
+            
+            # Method 1: Standard zip with compression
+            echo "Creating standard ZIP file..."
+            (cd "$src_dir" && zip -9 -r "../$zip_file" . -i '*.pdf' -x '*.zip')
+            
+            # Verify the zip
             if ! unzip -tq "$zip_file"; then
-              echo "❌ Invalid ZIP file detected, regenerating..."
+              echo "Standard ZIP failed validation, trying 7zip method..."
               rm -f "$zip_file"
-              return 1
+              
+              # Method 2: 7zip as fallback
+              7z a -tzip "$zip_file" "$src_dir/*.pdf"
+              
+              if ! unzip -tq "$zip_file"; then
+                echo "7zip method also failed validation"
+                return 1
+              fi
             fi
-            echo "✅ ZIP file validated successfully"
             return 0
           }
 
@@ -55,21 +67,20 @@ jobs:
             zip_file="zips/$dir.zip"
             needs_zip=false
 
-            # Validate existing zip file if it exists
+            # Check existing zip validity
             if [ -f "$zip_file" ]; then
-              if ! validate_zip "$zip_file"; then
+              if ! unzip -tq "$zip_file"; then
+                echo "Existing ZIP is corrupt, will regenerate"
                 needs_zip=true
-                changed=true
+                rm -f "$zip_file"
               fi
             else
-              echo "Zip file missing for $dir"
               needs_zip=true
             fi
 
-            # Check if directory exists
+            # Skip if directory doesn't exist
             if [ ! -d "$dir" ]; then
               echo "Directory $dir does not exist"
-              # Remove zip and checksum if they exist
               [ -f "$zip_file" ] && rm -f "$zip_file" && changed=true
               [ -f "$hash_file" ] && rm -f "$hash_file" && changed=true
               continue
@@ -79,89 +90,71 @@ jobs:
             current_hash=$(find "$dir" -type f -name "*.pdf" -print0 2>/dev/null | \
               xargs -0 stat --format '%n %s' 2>/dev/null | sha256sum | cut -d' ' -f1 || true)
 
-            # Get previous hash if exists
+            # Get previous hash
             previous_hash=""
-            if [ -f "$hash_file" ]; then
-              previous_hash=$(cat "$hash_file")
-            fi
+            [ -f "$hash_file" ] && previous_hash=$(cat "$hash_file")
 
-            # Determine if we need to create/update zip
+            # Determine if update needed
             if [ "$needs_zip" = true ] || [ "$current_hash" != "$previous_hash" ]; then
-              echo "Update needed for $dir (missing zip: $needs_zip, hash changed: $([ "$current_hash" != "$previous_hash" ] && echo "yes" || echo "no")"
-
+              echo "Update needed for $dir"
               pdf_count=$(find "$dir" -type f -name "*.pdf" | wc -l)
               
               if [ "$pdf_count" -gt 0 ]; then
-                echo "Creating/updating zip with $pdf_count PDF(s) from $dir"
-                
-                # Create temp directory for zipping
-                temp_dir=$(mktemp -d)
-                trap 'rm -rf "$temp_dir"' EXIT
-                
-                # Copy PDFs to temp directory to ensure clean zip creation
-                find "$dir" -type f -name "*.pdf" -exec cp {} "$temp_dir" \;
-                
-                # Create zip file with compression (-9 for maximum compression)
-                (cd "$temp_dir" && zip -9 -r "$OLDPWD/$zip_file" .)
-                
-                # Verify the newly created zip
-                if ! validate_zip "$zip_file"; then
-                  echo "❌ Failed to create valid ZIP file"
+                echo "Zipping $pdf_count PDF(s) from $dir"
+                if create_robust_zip "$dir" "$zip_file"; then
+                  ls -lh "$zip_file"
+                  echo "$current_hash" > "$hash_file"
+                  changed=true
+                else
+                  echo "Failed to create valid ZIP for $dir"
                   exit 1
                 fi
-                
-                ls -lh "$zip_file"
               else
-                echo "No PDFs found in $dir, removing zip if exists"
+                echo "No PDFs found, removing zip if exists"
                 rm -f "$zip_file"
+                changed=true
               fi
-
-              echo "$current_hash" > "$hash_file"
-              changed=true
             else
-              echo "No changes detected for $dir"
+              echo "No changes needed for $dir"
             fi
           done
 
+          # Git operations
           if [ "$changed" = true ]; then
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git config core.autocrlf false
-            
-            # Synchronize with remote
+            git config core.safecrlf true
+
+            # Handle line endings explicitly
+            find zips -type f -name "*.zip" -exec dos2unix {} \;
+
             git fetch origin main
-            if ! git merge --no-edit origin/main; then
+            git merge --no-edit origin/main || {
               echo "Merge conflict detected, aborting..."
               git merge --abort
               exit 1
-            fi
+            }
 
             git add .checksums zips
             if ! git diff --cached --quiet; then
-              git commit -m "Auto-update: Regenerated ZIP files with validation"
+              git commit -m "Auto-update: Validated ZIP files $(date +'%Y-%m-%d')"
               git remote set-url origin https://x-access-token:${{ secrets.PAT }}@github.com/${{ github.repository }}
               
-              # Push with retry logic
-              max_retries=3
-              count=0
-              until git push origin main; do
-                count=$((count+1))
-                if [ $count -ge $max_retries ]; then
-                  echo "Push failed after $max_retries attempts"
-                  exit 1
-                fi
-                echo "Push failed, retrying ($count/$max_retries)..."
-                sleep 2
-                git fetch origin main
-                if ! git merge --no-edit origin/main; then
-                  echo "Merge conflict detected during retry, aborting..."
-                  git merge --abort
-                  exit 1
+              # Push with retry
+              for i in {1..3}; do
+                if git push origin main; then
+                  break
+                else
+                  echo "Push failed, retrying ($i/3)..."
+                  sleep 2
+                  git fetch origin main
+                  git merge --no-edit origin/main || {
+                    echo "Merge conflict during retry, aborting..."
+                    git merge --abort
+                    exit 1
+                  }
                 fi
               done
-            else
-              echo "No changes to commit despite detected changes (race condition?)"
             fi
-          else
-            echo "No ZIP updates needed."
           fi
