@@ -10,41 +10,46 @@ on:
       - 'herc/**/*.pdf'
 
 jobs:
-  zip-pdfs:
+  zip:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.PAT }}  # Requires 'repo' scope
+          token: ${{ secrets.PAT }}
 
-      - name: Create zips directory
-        run: mkdir -p zips
+      - name: Install dependencies
+        run: sudo apt-get install -y zip
 
-      - name: Zip only PDFs from each folder
+      - name: Create zips only if PDFs changed
         run: |
+          mkdir -p zips .checksums
+          changed=false
+
           for dir in acm fbos rac frc herc; do
-            if [ -d "$dir" ]; then
-              find "$dir" -type f -name "*.pdf" > files.txt
-              if [ -s files.txt ]; then
-                zip -@ "zips/${dir}.zip" < files.txt
-              fi
+            [ -d "$dir" ] || continue
+            hash_file=".checksums/$dir.sha"
+            current_hash=$(find "$dir" -type f -name "*.pdf" -print0 | xargs -0 stat --format '%n %s' | sha256sum | cut -d' ' -f1)
+            previous_hash=$(cat "$hash_file" 2>/dev/null || echo "")
+
+            if [ "$current_hash" != "$previous_hash" ]; then
+              echo "Zipping $dir: changes detected"
+              zip -r -j "zips/$dir.zip" "$dir"/*.pdf
+              echo "$current_hash" > "$hash_file"
+              cp "zips/$dir.zip" "$dir/$dir.zip"
+              changed=true
+            else
+              echo "No change in $dir"
             fi
           done
 
-      - name: Commit and push PDF zips
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-          git add zips/
-
-          if ! git diff --cached --quiet; then
-            git commit -m "Zipped updated PDFs from meeting folders"
-            git remote set-url origin https://x-access-token:${{ secrets.PAT }}@github.com/bufoes/bufoes.github.io.git
-            git push origin main
+          if [ "$changed" = true ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add .checksums zips */*.zip
+            git commit -m "Selective ZIP update based on PDF changes"
+            git remote set-url origin https://x-access-token:${{ secrets.PAT }}@github.com/${{ github.repository }}
+            git push
           fi
