@@ -51,14 +51,12 @@ jobs:
               # Only zip if PDFs exist
               pdf_count=$(find "$dir" -type f -name "*.pdf" | wc -l)
               if [ "$pdf_count" -gt 0 ]; then
-                # Zip PDFs inside the directory, store zip in ../zips folder
-                (cd "$dir" && zip -r "../zips/$dir.zip" . -i '*.pdf')
-                # Copy zip to the directory as well
-                cp "zips/$dir.zip" "$dir/$dir.zip"
+                # Zip PDFs inside the directory, store zip in ../zips folder, exclude any .zip files
+                (cd "$dir" && zip -r "../zips/$dir.zip" . -i '*.pdf' -x '*.zip')
+                ls -lh "../zips/$dir.zip"
               else
                 echo "No PDFs found in $dir, skipping zip."
-                # Remove old zip if exists
-                rm -f "zips/$dir.zip" "$dir/$dir.zip"
+                rm -f "zips/$dir.zip"
               fi
 
               echo "$current_hash" > "$hash_file"
@@ -71,7 +69,7 @@ jobs:
           if [ "$changed" = true ]; then
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add .checksums zips */*.zip
+            git add .checksums zips
             if ! git diff --cached --quiet; then
               git commit -m "Selective ZIP update based on PDF changes"
               git remote set-url origin https://x-access-token:${{ secrets.PAT }}@github.com/${{ github.repository }}
