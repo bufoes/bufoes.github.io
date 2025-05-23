@@ -24,11 +24,6 @@ title: Bahria Faculty of Engineering Sciences Meeting Portal
       text-align: center;
     }
 
-    header h1 {
-      margin: 0;
-      font-size: 1.8rem;
-    }
-
     main {
       max-width: 900px;
       margin: 2rem auto;
@@ -58,16 +53,15 @@ title: Bahria Faculty of Engineering Sciences Meeting Portal
       align-items: center;
     }
 
-    summary:hover {
-      background-color: #1a4d8f;
+    summary::before {
+      content: "▶";
+      display: inline-block;
+      margin-right: 10px;
+      transform: rotate(0deg);
+      transition: transform 0.2s ease;
     }
 
-    .arrow {
-      margin-right: 1rem;
-      transition: transform 0.3s;
-    }
-
-    details[open] .arrow {
+    details[open] summary::before {
       transform: rotate(90deg);
     }
 
@@ -76,8 +70,9 @@ title: Bahria Faculty of Engineering Sciences Meeting Portal
       color: white;
       padding: 0.4rem 0.8rem;
       border-radius: 4px;
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       text-decoration: none;
+      transition: background-color 0.2s;
     }
 
     .download-all:hover {
@@ -95,9 +90,6 @@ title: Bahria Faculty of Engineering Sciences Meeting Portal
     li {
       padding: 0.5rem 0;
       border-bottom: 1px solid #eee;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
     }
 
     li:last-child {
@@ -114,12 +106,6 @@ title: Bahria Faculty of Engineering Sciences Meeting Portal
       color: #0047ab;
     }
 
-    .file-date {
-      color: #666;
-      font-size: 0.85rem;
-      margin-left: 0.5rem;
-    }
-
     .no-files {
       color: #666;
       font-style: italic;
@@ -129,91 +115,55 @@ title: Bahria Faculty of Engineering Sciences Meeting Portal
 </head>
 <body>
 
-<header>
-  <h1>{{ page.title }}</h1>
-</header>
+  <header>
+    <h1>{{ page.title }}</h1>
+  </header>
 
-<main>
-  {% assign categories = "acm,fbos,rac,frc,herc" | split: "," %}
-  
-  {% for cat in categories %}
-    {% assign folder_path = cat | prepend: '/' | append: '/' %}
-    {% assign filtered_pdfs = site.static_files | 
-                            where: "extname", ".pdf" | 
-                            where_exp: "file", "file.path contains folder_path" |
-                            sort: "modified_time" |
-                            reverse %}
-    
-    <details>
-      <summary>
-        <span><span class="arrow">▶</span>{{ cat | upcase }} Meetings ({{ filtered_pdfs.size }})</span>
-        {% if filtered_pdfs.size > 0 %}
-          <a href="#" class="download-all" onclick="downloadAllPDFs(event, '{{ cat }}')">Download All</a>
-        {% endif %}
-      </summary>
+  <main>
+    {% assign categories = "acm,fbos,rac,frc,herc" | split: "," %}
 
-      <ul>
-        {% if filtered_pdfs.size > 0 %}
-          {% for pdf in filtered_pdfs %}
-            {% assign filename = pdf.name | remove: '.pdf' %}
-            {% assign clean_name_parts = filename | split: '-' %}
-            {% assign clean_name_parts_size = clean_name_parts | size %}
-            {% assign clean_name = clean_name_parts[0] %}
-            {% for i in (1..clean_name_parts_size-2) %}
-              {% assign clean_name = clean_name | append: ' ' | append: clean_name_parts[i] %}
+    {% for cat in categories %}
+      {% assign folder_path = cat | prepend: '/' | append: '/' %}
+      {% assign filtered_pdfs = site.static_files | 
+                                where: "extname", ".pdf" | 
+                                where_exp: "file", "file.path contains folder_path" |
+                                sort: "modified_time" |
+                                reverse %}
+      
+      <details>
+        <summary>
+          {{ cat | upcase }} Meetings ({{ filtered_pdfs.size }})
+          {% if filtered_pdfs.size > 0 %}
+            <a href="{{ folder_path }}{{ cat }}.zip" class="download-all" onclick="event.stopPropagation();">
+              Download All
+            </a>
+          {% endif %}
+        </summary>
+        
+        <ul>
+          {% if filtered_pdfs.size > 0 %}
+            {% for pdf in filtered_pdfs %}
+              {% assign filename = pdf.name | remove: '.pdf' %}
+              {% assign match = filename | split: '-' %}
+              {% assign meeting_number = match[1] %}
+              <li>
+                <a href="{{ pdf.path | relative_url }}" download="{{ pdf.name }}" target="_blank">
+                  {{ cat | upcase }} {{ meeting_number }}{% case meeting_number %}
+                    {% when '1' %}st
+                    {% when '2' %}nd
+                    {% when '3' %}rd
+                    {% else %}th
+                  {% endcase %} Minutes
+                </a>
+              </li>
             {% endfor %}
-            <li>
-              <a href="{{ pdf.path | relative_url }}" download="{{ pdf.name }}" target="_blank">
-                {{ clean_name | replace: '_', ' ' | capitalize }}
-                <span class="file-date">({{ pdf.modified_time | date: "%b %d, %Y" }})</span>
-              </a>
-            </li>
-          {% endfor %}
-        {% else %}
-          <li class="no-files">No meetings found for {{ cat | upcase }}</li>
-        {% endif %}
-      </ul>
-    </details>
-  {% endfor %}
-</main>
-
-<script>
-  // Toggle arrow direction
-  document.querySelectorAll('summary').forEach(summary => {
-    summary.addEventListener('click', () => {
-      const arrow = summary.querySelector('.arrow');
-      setTimeout(() => {
-        arrow.textContent = summary.parentElement.open ? '▼' : '▶';
-      }, 50);
-    });
-  });
-
-  // Download all PDFs in a category
-  function downloadAllPDFs(event, category) {
-    event.preventDefault();
-    event.stopPropagation();
-
-    const detailsElement = event.target.closest('details');
-    const pdfLinks = detailsElement.querySelectorAll('ul a[download]');
-
-    if (!confirm(`Download all ${pdfLinks.length} PDFs from ${category.toUpperCase()}?`)) {
-      return;
-    }
-
-    pdfLinks.forEach((link, index) => {
-      setTimeout(() => {
-        const downloadLink = document.createElement('a');
-        downloadLink.href = link.href;
-        downloadLink.download = link.download;
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
-      }, index * 1000);
-    });
-
-    alert(`Started downloading ${pdfLinks.length} files from ${category.toUpperCase()}.`);
-  }
-</script>
+          {% else %}
+            <li class="no-files">No meetings found for {{ cat | upcase }}</li>
+          {% endif %}
+        </ul>
+      </details>
+    {% endfor %}
+  </main>
 
 </body>
 </html>
