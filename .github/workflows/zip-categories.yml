@@ -3,11 +3,12 @@ name: Auto Zip PDFs from Meeting Folders
 on:
   push:
     paths:
-      - 'acm/**/*.pdf'
-      - 'fbos/**/*.pdf'
-      - 'rac/**/*.pdf'
-      - 'frc/**/*.pdf'
-      - 'herc/**/*.pdf'
+      - 'acm/**'
+      - 'fbos/**'
+      - 'rac/**'
+      - 'frc/**'
+      - 'herc/**'
+      - 'zips/**'
 
 jobs:
   zip:
@@ -23,59 +24,115 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y zip
 
-      - name: Create zips only if PDFs changed
+      - name: Create or update zips
         run: |
+          set -euo pipefail
           mkdir -p zips .checksums
           changed=false
 
-          for dir in acm fbos rac frc herc; do
+          # Initialize array of directories we expect to process
+          expected_dirs=("acm" "fbos" "rac" "frc" "herc")
+
+          # Process each directory
+          for dir in "${expected_dirs[@]}"; do
+            echo "Processing $dir..."
+            hash_file=".checksums/$dir.sha"
+            zip_file="zips/$dir.zip"
+            needs_zip=false
+
+            # Check if directory exists
             if [ ! -d "$dir" ]; then
-              echo "Skipping $dir: directory does not exist"
+              echo "Directory $dir does not exist"
+              # Remove zip and checksum if they exist
+              if [ -f "$zip_file" ]; then
+                echo "Removing orphaned zip file: $zip_file"
+                rm -f "$zip_file"
+                changed=true
+              fi
+              if [ -f "$hash_file" ]; then
+                echo "Removing orphaned checksum file: $hash_file"
+                rm -f "$hash_file"
+                changed=true
+              fi
               continue
             fi
 
-            hash_file=".checksums/$dir.sha"
+            # Check if zip is missing
+            if [ ! -f "$zip_file" ]; then
+              echo "Zip file missing for $dir"
+              needs_zip=true
+            fi
 
-            # Compute hash of all PDFs in folder (names + sizes)
-            current_hash=$(find "$dir" -type f -name "*.pdf" -print0 | \
-              xargs -0 stat --format '%n %s' | sha256sum | cut -d' ' -f1)
+            # Compute current hash of PDFs
+            current_hash=$(find "$dir" -type f -name "*.pdf" -print0 2>/dev/null | \
+              xargs -0 stat --format '%n %s' 2>/dev/null | sha256sum | cut -d' ' -f1 || true)
 
+            # Get previous hash if exists
             previous_hash=""
             if [ -f "$hash_file" ]; then
               previous_hash=$(cat "$hash_file")
             fi
 
-            if [ "$current_hash" != "$previous_hash" ]; then
-              echo "Zipping $dir: changes detected"
+            # Determine if we need to create/update zip
+            if [ "$needs_zip" = true ] || [ "$current_hash" != "$previous_hash" ]; then
+              echo "Update needed for $dir (missing zip: $needs_zip, hash changed: $([ "$current_hash" != "$previous_hash" ] && echo "yes" || echo "no")"
 
-              # Only zip if PDFs exist
               pdf_count=$(find "$dir" -type f -name "*.pdf" | wc -l)
+              
               if [ "$pdf_count" -gt 0 ]; then
-                # Zip PDFs inside the directory, store zip in ../zips folder, exclude any .zip files
-                (cd "$dir" && zip -r "../zips/$dir.zip" . -i '*.pdf' -x '*.zip')
-                ls -lh "../zips/$dir.zip"
+                echo "Creating/updating zip with $pdf_count PDF(s) from $dir"
+                (cd "$dir" && zip -r "../$zip_file" . -i '*.pdf' -x '*.zip')
+                ls -lh "$zip_file"
               else
-                echo "No PDFs found in $dir, skipping zip."
-                rm -f "zips/$dir.zip"
+                echo "No PDFs found in $dir, removing zip if exists"
+                rm -f "$zip_file"
               fi
 
               echo "$current_hash" > "$hash_file"
               changed=true
             else
-              echo "No change in $dir"
+              echo "No changes detected for $dir"
             fi
           done
 
           if [ "$changed" = true ]; then
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
+            git config core.autocrlf false
+            
+            # Synchronize with remote
+            git fetch origin main
+            if ! git merge --no-edit origin/main; then
+              echo "Merge conflict detected, aborting..."
+              git merge --abort
+              exit 1
+            fi
+
             git add .checksums zips
             if ! git diff --cached --quiet; then
-              git commit -m "Selective ZIP update based on PDF changes"
+              git commit -m "Auto-update: Regenerated missing or outdated ZIPs"
               git remote set-url origin https://x-access-token:${{ secrets.PAT }}@github.com/${{ github.repository }}
-              git push
+              
+              # Push with retry logic
+              max_retries=3
+              count=0
+              until git push origin main; do
+                count=$((count+1))
+                if [ $count -ge $max_retries ]; then
+                  echo "Push failed after $max_retries attempts"
+                  exit 1
+                fi
+                echo "Push failed, retrying ($count/$max_retries)..."
+                sleep 2
+                git fetch origin main
+                if ! git merge --no-edit origin/main; then
+                  echo "Merge conflict detected during retry, aborting..."
+                  git merge --abort
+                  exit 1
+                fi
+              done
             else
-              echo "No changes to commit."
+              echo "No changes to commit despite detected changes (race condition?)"
             fi
           else
             echo "No ZIP updates needed."
