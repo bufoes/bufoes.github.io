@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "mimeTypes": {
+    ".zip": "application/zip"
+  }
+}
