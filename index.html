@@ -2,7 +2,6 @@
 layout: default
 title: Bahria Faculty of Engineering Sciences Meeting Portal
 ---
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -22,6 +21,17 @@ title: Bahria Faculty of Engineering Sciences Meeting Portal
       color: white;
       padding: 1.5rem;
       text-align: center;
+    }
+
+    header .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    header img {
+      height: 60px;
     }
 
     header h1 {
@@ -126,7 +136,10 @@ title: Bahria Faculty of Engineering Sciences Meeting Portal
 <body>
 
 <header>
-  <h1>{{ page.title }}</h1>
+  <div class="header-content">
+    <img src="bahria-university-logo.png" alt="Bahria University Logo">
+    <h1>{{ page.title }}</h1>
+  </div>
 </header>
 
 <main>
@@ -134,12 +147,13 @@ title: Bahria Faculty of Engineering Sciences Meeting Portal
   {% for cat in categories %}
     {% assign folder_path = cat | prepend: '/' | append: '/' %}
     {% assign filtered_pdfs = site.static_files | where: "extname", ".pdf" | where_exp: "file", "file.path contains folder_path" | sort: "name" %}
+    {% assign zip_file = site.static_files | where: "path", folder_path | append: cat | append: ".zip" | first %}
     
     <details>
       <summary>
         {{ cat | upcase }} Meetings ({{ filtered_pdfs.size }})
-        {% if filtered_pdfs.size > 0 %}
-          <a href="#" class="download-all" onclick="downloadAllPDFs(event, '{{ cat }}')">Download All</a>
+        {% if zip_file %}
+          <a href="#" class="download-all" onclick="downloadZip(event, '{{ cat }}')">Download All (ZIP)</a>
         {% endif %}
       </summary>
       <ul>
@@ -175,29 +189,19 @@ title: Bahria Faculty of Engineering Sciences Meeting Portal
 </main>
 
 <script>
-  function downloadAllPDFs(event, category) {
+  function downloadZip(event, category) {
     event.preventDefault();
     event.stopPropagation();
 
-    const detailsElement = event.target.closest('details');
-    const pdfLinks = detailsElement.querySelectorAll('ul a[download]');
-
-    if (!confirm(`Download all ${pdfLinks.length} PDFs from ${category.toUpperCase()}?`)) {
-      return;
+    const zipUrl = `/${category}/${category}.zip`;
+    if (confirm(`Download the ${category.toUpperCase()} ZIP file containing all meetings?`)) {
+      const downloadLink = document.createElement('a');
+      downloadLink.href = zipUrl;
+      downloadLink.download = `${category}.zip`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
     }
-
-    pdfLinks.forEach((link, index) => {
-      setTimeout(() => {
-        const downloadLink = document.createElement('a');
-        downloadLink.href = link.href;
-        downloadLink.download = link.download;
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
-      }, index * 1000);
-    });
-
-    alert(`Started downloading ${pdfLinks.length} files from ${category.toUpperCase()}.`);
   }
 </script>
 
