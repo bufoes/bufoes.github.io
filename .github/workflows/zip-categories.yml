@@ -35,4 +35,4 @@ jobs:
           git diff --cached --quiet || git commit -m "Auto-zipped meeting folders"
           git push
         env:
-          GITHUB_TOKEN: ${{ secrets.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 }}
+          GITHUB_TOKEN: ${{ secrets.PAT }}
