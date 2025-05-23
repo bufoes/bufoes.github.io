@@ -12,13 +12,24 @@ on:
 jobs:
   zip:
     runs-on: ubuntu-latest
+    
+    # Explicit permissions declaration
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: read
+      checks: write
+      statuses: write
+      deployments: write
+      packages: write
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
-          token: ${{ secrets.PAT }}  # Use PAT instead of PERSONAL_TOKEN
-          fetch-depth: 0  # Fetch all history for all branches and tags
+          fetch-depth: 0
+          # Use the default GITHUB_TOKEN with write permissions
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Zip folders
         run: |
@@ -28,12 +39,11 @@ jobs:
             fi
           done
 
-      - name: Commit and push ZIP files
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add acm/acm.zip fbos/fbos.zip rac/rac.zip frc/frc.zip herc/herc.zip
-          git diff --cached --quiet || git commit -m "Auto-zipped meeting folders on push"
-          git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT }}  # Use the same PAT here
+      - name: Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Auto-zipped meeting folders on push"
+          branch: main
+          file_pattern: '*/**/*.zip'
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "github-actions[bot]@users.noreply.github.com"
