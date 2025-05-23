@@ -1,6 +1,7 @@
-name: Auto Zip PDFs from Meeting Folders
+name: Create and Deploy ZIPs with Jekyll
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - 'acm/**'
@@ -8,108 +9,72 @@ on:
       - 'rac/**'
       - 'frc/**'
       - 'herc/**'
-      - '!zips/**'  # Exclude zip directory
-      - '!.checksums/**'  # Exclude checksums directory
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  zip:
+  create-zips:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
           token: ${{ secrets.PAT }}
-          persist-credentials: false
 
-      - name: Install dependencies
+      - name: Install zip tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y zip unzip p7zip-full
+          sudo apt-get install -y zip p7zip-full
 
-      - name: Create validated zips
+      - name: Create validated ZIPs
         run: |
           set -euo pipefail
-          mkdir -p zips .checksums
-          changed=false
+          mkdir -p zips
 
-          expected_dirs=("acm" "fbos" "rac" "frc" "herc")
-
-          create_valid_zip() {
-            local src_dir=$1
-            local zip_file=$2
-            
-            temp_dir=$(mktemp -d)
-            trap 'rm -rf "$temp_dir"' EXIT
-            
-            find "$src_dir" -name '*.pdf' -exec cp {} "$temp_dir" \;
-            
-            (cd "$temp_dir" && zip -9 -r "$OLDPWD/$zip_file" .)
-            
-            if ! unzip -tq "$zip_file"; then
-              echo "ERROR: Created invalid ZIP file, trying 7zip..."
-              7z a -tzip "$zip_file" "$temp_dir/*"
-              if ! unzip -tq "$zip_file"; then
-                echo "ERROR: Failed to create valid ZIP file"
+          # Create ZIPs in a way that survives Jekyll processing
+          for dir in acm fbos rac frc herc; do
+            if [ -d "$dir" ]; then
+              echo "Creating ZIP for $dir"
+              # Use 7zip for more reliable binary preservation
+              7z a -tzip -mx=9 "zips/$dir.7z" "$dir/*.pdf"
+              # Rename to .zip after creation
+              mv "zips/$dir.7z" "zips/$dir.zip"
+              
+              # Verify ZIP integrity
+              if ! unzip -tq "zips/$dir.zip"; then
+                echo "ERROR: Failed to create valid ZIP"
                 exit 1
               fi
-            fi
-          }
-
-          for dir in "${expected_dirs[@]}"; do
-            echo "Processing $dir..."
-            hash_file=".checksums/$dir.sha"
-            zip_file="zips/$dir.zip"
-
-            if [ ! -d "$dir" ]; then
-              echo "Directory $dir does not exist"
-              [ -f "$zip_file" ] && rm -f "$zip_file" && changed=true
-              [ -f "$hash_file" ] && rm -f "$hash_file" && changed=true
-              continue
-            fi
-
-            current_hash=$(find "$dir" -type f -name "*.pdf" -print0 2>/dev/null | \
-              xargs -0 stat --format '%n %s' 2>/dev/null | sha256sum | cut -d' ' -f1 || true)
-
-            previous_hash=""
-            [ -f "$hash_file" ] && previous_hash=$(cat "$hash_file")
-
-            if [ ! -f "$zip_file" ] || [ "$current_hash" != "$previous_hash" ] || \
-               { [ -f "$zip_file" ] && ! unzip -tq "$zip_file"; }; then
-              echo "Update needed for $dir"
-              pdf_count=$(find "$dir" -name '*.pdf' | wc -l)
-              
-              if [ "$pdf_count" -gt 0 ]; then
-                echo "Zipping $pdf_count PDF(s) from $dir"
-                create_valid_zip "$dir" "$zip_file"
-                ls -lh "$zip_file"
-                echo "$current_hash" > "$hash_file"
-                changed=true
-              else
-                echo "No PDFs found, removing zip if exists"
-                rm -f "$zip_file"
-                changed=true
-              fi
+              ls -lh "zips/$dir.zip"
             else
-              echo "No changes needed for $dir"
+              echo "Directory $dir not found"
             fi
           done
 
-          if [ "$changed" = true ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git config core.autocrlf false
+      - name: Add ZIP mime type configuration
+        run: |
+          echo '{
+            "version": 1,
+            "mimeTypes": {
+              ".zip": "application/zip"
+            }
+          }' > _headers
+          echo '*.zip binary' > .gitattributes
 
-            git add .checksums zip
-            git commit -m "Auto-update: Regenerated ZIP files [skip ci]" || exit 0
-            
-            git remote set-url origin "https://x-access-token:${{ secrets.PAT }}@github.com/${{ github.repository }}"
-            git push origin HEAD
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config core.autocrlf false
+          
+          git add zips/ _headers .gitattributes
+          if ! git diff --cached --quiet; then
+            git commit -m "Update ZIP archives [skip ci]"
+            git remote set-url origin https://x-access-token:${{ secrets.PAT }}@github.com/${{ github.repository }}
+            git push
           else
             echo "No changes to commit"
           fi
