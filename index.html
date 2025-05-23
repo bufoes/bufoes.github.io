@@ -20,49 +20,59 @@ title: BU FoES Meeting Minutes Portal
       background-color: #002147;
       color: white;
       padding: 1.5rem;
-      text-align: center;
     }
 
     header .header-content {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 1rem;
       position: relative;
+      max-width: 900px;
+      margin: 0 auto;
     }
 
-    header img {
-      position: absolute;
-      left: 1.5rem;
+    header .logo-container {
+      flex: 0 0 auto;
+    }
+
+    header .logo-container img {
       height: 60px;
       background-color: white;
       padding: 4px 8px;
       border-radius: 6px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      display: block;
     }
 
-    header h1 {
-      margin: 0 auto;
-      font-size: 1.8rem;
+    header .title-container {
+      flex: 1 1 auto;
       text-align: center;
-      width: 100%;
+    }
+
+    header .title-container h1 {
+      margin: 0;
+      font-size: 1.8rem;
     }
 
     /* Responsive for small screens */
     @media (max-width: 480px) {
       header .header-content {
         flex-direction: column;
-        position: static;
         gap: 0.5rem;
+        max-width: 100%;
       }
 
-      header img {
-        position: static;
+      header .logo-container {
+        flex: none;
         margin: 0 auto;
       }
 
-      header h1 {
+      header .title-container {
+        flex: none;
         width: auto;
+      }
+
+      header .title-container h1 {
         font-size: 1.5rem;
       }
     }
@@ -177,8 +187,12 @@ title: BU FoES Meeting Minutes Portal
 
 <header>
   <div class="header-content">
-    <img src="bahria-university-logo.png" alt="Bahria University Logo">
-    <h1>{{ page.title }}</h1>
+    <div class="logo-container">
+      <img src="bahria-university-logo.png" alt="Bahria University Logo" />
+    </div>
+    <div class="title-container">
+      <h1>{{ page.title }}</h1>
+    </div>
   </div>
 </header>
 
