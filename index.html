@@ -32,6 +32,10 @@ title: Bahria Faculty of Engineering Sciences Meeting Portal
 
     header img {
       height: 60px;
+      background-color: white;
+      padding: 4px 8px;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
     }
 
     header h1 {
@@ -90,11 +94,19 @@ title: Bahria Faculty of Engineering Sciences Meeting Portal
       font-size: 0.9rem;
       text-decoration: none;
       transition: background-color 0.2s;
+      white-space: nowrap;
     }
 
     .download-all:hover {
       background-color: #2ecc71;
       text-decoration: none;
+    }
+
+    .download-all.disabled {
+      background-color: #aaa;
+      cursor: not-allowed;
+      pointer-events: none;
+      opacity: 0.6;
     }
 
     ul {
@@ -147,13 +159,16 @@ title: Bahria Faculty of Engineering Sciences Meeting Portal
   {% for cat in categories %}
     {% assign folder_path = cat | prepend: '/' | append: '/' %}
     {% assign filtered_pdfs = site.static_files | where: "extname", ".pdf" | where_exp: "file", "file.path contains folder_path" | sort: "name" %}
-    {% assign zip_file = site.static_files | where: "path", folder_path | append: cat | append: ".zip" | first %}
+    {% assign zip_path = folder_path | append: cat | append: ".zip" %}
+    {% assign zip_file = site.static_files | where: "path", zip_path | first %}
     
     <details>
       <summary>
         {{ cat | upcase }} Meetings ({{ filtered_pdfs.size }})
         {% if zip_file %}
           <a href="#" class="download-all" onclick="downloadZip(event, '{{ cat }}')">Download All (ZIP)</a>
+        {% else %}
+          <span class="download-all disabled" title="ZIP file not available">Download All (ZIP)</span>
         {% endif %}
       </summary>
       <ul>
