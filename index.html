@@ -26,11 +26,14 @@ title: BU FoES Meeting Minutes Portal
     header .header-content {
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: center; /* center heading horizontally */
       gap: 1rem;
+      position: relative; /* container for absolute positioning */
     }
 
     header img {
+      position: absolute;
+      left: 1.5rem; /* fix logo on the left */
       height: 60px;
       background-color: white;
       padding: 4px 8px;
@@ -39,8 +42,10 @@ title: BU FoES Meeting Minutes Portal
     }
 
     header h1 {
-      margin: 0;
+      margin: 0 auto;
       font-size: 1.8rem;
+      text-align: center;
+      width: 100%;
     }
 
     main {
