@@ -2,7 +2,6 @@
 layout: default
 title: Bahria Faculty of Engineering Sciences Meeting Portal
 ---
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,34 +9,18 @@ title: Bahria Faculty of Engineering Sciences Meeting Portal
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>{{ page.title }}</title>
   <style>
-    :root {
-      --bahria-blue: #002147;
-      --bahria-dark-blue: #003366;
-      --bahria-light-blue: #1a4d8f;
-      --bahria-green: #27ae60;
-      --bahria-light-green: #2ecc71;
-      --text-dark: #333;
-      --text-light: #666;
-      --bg-light: #f4f6f9;
-      --card-bg: #ffffff;
-      --card-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: var(--bg-light);
+      background-color: #f4f6f9;
       margin: 0;
       padding: 0;
-      color: var(--text-dark);
-      line-height: 1.6;
     }
     
     header {
-      background-color: var(--bahria-blue);
+      background-color: #002147; /* Bahria Navy Blue */
       color: white;
       padding: 1.5rem;
       text-align: center;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
     
     header h1 {
@@ -48,42 +31,40 @@ title: Bahria Faculty of Engineering Sciences Meeting Portal
     main {
       max-width: 900px;
       margin: 2rem auto;
-      padding: 0 1rem;
+      background-color: #ffffff;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
     
-    .category-container {
-      background-color: var(--card-bg);
-      border-radius: 12px;
-      box-shadow: var(--card-shadow);
+    details {
       margin-bottom: 1.5rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
       overflow: hidden;
     }
     
-    .category-header {
+    summary {
+      background-color: #003366;
+      color: white;
+      padding: 1rem;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      user-select: none;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background-color: var(--bahria-dark-blue);
-      color: white;
-      padding: 1rem 1.5rem;
-      cursor: pointer;
-      user-select: none;
     }
     
-    .category-header:hover {
-      background-color: var(--bahria-light-blue);
-    }
-    
-    .category-title {
-      font-size: 1.1rem;
-      font-weight: bold;
-      margin: 0;
+    summary:hover {
+      background-color: #1a4d8f;
     }
     
     .download-all {
-      background-color: var(--bahria-green);
+      background-color: #27ae60;
       color: white;
-      padding: 0.5rem 1rem;
+      padding: 0.4rem 0.8rem;
       border-radius: 4px;
       font-size: 0.9rem;
       text-decoration: none;
@@ -91,72 +72,49 @@ title: Bahria Faculty of Engineering Sciences Meeting Portal
     }
     
     .download-all:hover {
-      background-color: var(--bahria-light-green);
+      background-color: #2ecc71;
+      text-decoration: none;
     }
     
-    .pdf-list {
+    ul {
       list-style-type: none;
       padding: 1rem 1.5rem;
       margin: 0;
-      background-color: rgba(249, 250, 252, 0.8);
-      display: none;
+      background-color: #f9fafc;
     }
     
-    .category-container.expanded .pdf-list {
-      display: block;
-    }
-    
-    .pdf-item {
-      padding: 0.75rem 0;
+    li {
+      padding: 0.5rem 0;
       border-bottom: 1px solid #eee;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
     
-    .pdf-item:last-child {
+    li:last-child {
       border-bottom: none;
     }
     
-    .pdf-link {
-      color: var(--bahria-blue);
+    a {
+      color: #002147;
       text-decoration: none;
-      flex-grow: 1;
     }
     
-    .pdf-link:hover {
+    a:hover {
       text-decoration: underline;
-      color: var(--bahria-light-blue);
+      color: #0047ab;
     }
     
     .file-date {
-      color: var(--text-light);
+      color: #666;
       font-size: 0.85rem;
       margin-left: 0.5rem;
     }
     
-    .download-icon {
-      color: var(--text-light);
-      margin-left: 0.5rem;
-      font-size: 0.9rem;
-    }
-    
     .no-files {
-      color: var(--text-light);
+      color: #666;
       font-style: italic;
       padding: 1rem 0;
-    }
-    
-    @media (max-width: 600px) {
-      .category-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-      }
-      
-      .download-all {
-        align-self: flex-end;
-      }
     }
   </style>
 </head>
@@ -177,52 +135,45 @@ title: Bahria Faculty of Engineering Sciences Meeting Portal
                               sort: "modified_time" |
                               reverse %}
       
-      <div class="category-container">
-        <div class="category-header" onclick="toggleCategory(this.parentElement)">
-          <h2 class="category-title">
-            {{ cat | upcase }} Meetings ({{ filtered_pdfs.size }})
-          </h2>
+      <details>
+        <summary>
+          {{ cat | upcase }} Meetings ({{ filtered_pdfs.size }})
           {% if filtered_pdfs.size > 0 %}
-            <a href="#" class="download-all" onclick="downloadAllPDFs(event, '{{ cat }}'); return false;">
+            <a href="#" class="download-all" onclick="downloadAllPDFs(event, '{{ cat }}')">
               Download All
             </a>
           {% endif %}
-        </div>
+        </summary>
         
-        <div class="pdf-list">
+        <ul>
           {% if filtered_pdfs.size > 0 %}
             {% for pdf in filtered_pdfs %}
               {% assign filename = pdf.name | remove: '.pdf' %}
               {% assign clean_name = filename | split: '-' | first | replace: '_', ' ' | capitalize %}
-              <div class="pdf-item">
-                <a href="{{ pdf.path | relative_url }}" download="{{ pdf.name }}" class="pdf-link" target="_blank">
+              <li>
+                <a href="{{ pdf.path | relative_url }}" download="{{ pdf.name }}" target="_blank">
                   {{ clean_name }}
                   <span class="file-date">({{ pdf.modified_time | date: "%b %d, %Y" }})</span>
                 </a>
-                <span class="download-icon" title="Download">↓</span>
-              </div>
+              </li>
             {% endfor %}
           {% else %}
-            <div class="no-files">No meetings found for {{ cat | upcase }}</div>
+            <li class="no-files">No meetings found for {{ cat | upcase }}</li>
           {% endif %}
-        </div>
-      </div>
+        </ul>
+      </details>
     {% endfor %}
   </main>
 
   <script>
-    // Toggle category expansion
-    function toggleCategory(categoryElement) {
-      categoryElement.classList.toggle('expanded');
-    }
-    
     // Download all PDFs in a category
     function downloadAllPDFs(event, category) {
-      event.stopPropagation(); // Prevent category toggle
+      event.preventDefault();
+      event.stopPropagation();
       
       // Get all PDF links in this category
-      const categoryElement = event.target.closest('.category-container');
-      const pdfLinks = Array.from(categoryElement.querySelectorAll('.pdf-link'));
+      const detailsElement = event.target.closest('details');
+      const pdfLinks = detailsElement.querySelectorAll('ul a[download]');
       
       // Confirm with user
       if (!confirm(`Download all ${pdfLinks.length} PDFs from ${category.toUpperCase()}?`)) {
@@ -232,25 +183,17 @@ title: Bahria Faculty of Engineering Sciences Meeting Portal
       // Download each file
       pdfLinks.forEach((link, index) => {
         setTimeout(() => {
-          const iframe = document.createElement('iframe');
-          iframe.style.display = 'none';
-          iframe.src = link.href;
-          document.body.appendChild(iframe);
-          
-          setTimeout(() => {
-            document.body.removeChild(iframe);
-          }, 1000);
+          const downloadLink = document.createElement('a');
+          downloadLink.href = link.href;
+          downloadLink.download = link.download;
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
         }, index * 1000); // 1 second delay between downloads
       });
       
       alert(`Started downloading ${pdfLinks.length} files from ${category.toUpperCase()}.`);
     }
-    
-    // Close all categories by default
-    document.addEventListener('DOMContentLoaded', function() {
-      // Optionally open the first category
-      // document.querySelector('.category-container').classList.add('expanded');
-    });
   </script>
 
 </body>
