@@ -4,5 +4,6 @@ include:
   - fbos
   - rac
   - frc
+  - herc
 exclude:
   - "zips/*.zip"
