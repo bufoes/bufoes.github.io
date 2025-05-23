@@ -13,45 +13,36 @@ jobs:
   zip:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # Required for GitHub Pages repos
-      pages: write    # Special permission for GitHub Pages
-      id-token: write # Required for GitHub Pages deployments
+      contents: write  # Needed for pushing changes
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.PAT }}  # Use your PAT here
+          token: ${{ secrets.PAT }}
 
       - name: Zip folders
         run: |
           for dir in acm fbos rac frc herc; do
             if [ -d "$dir" ]; then
-              echo "Zipping $dir..."
               zip -r "${dir}/${dir}.zip" "$dir" -x "*.zip"
-              ls -la "${dir}/"  # Debug: Show created files
             fi
           done
 
       - name: Commit and push changes
         run: |
-          # Configure git
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          
-          # Add all zip files explicitly
-          git add acm/acm.zip || echo "No ACM zip to add"
-          git add fbos/fbos.zip || echo "No FBOS zip to add"
-          git add rac/rac.zip || echo "No RAC zip to add"
-          git add frc/frc.zip || echo "No FRC zip to add"
-          git add herc/herc.zip || echo "No HERC zip to add"
-          
-          # Check for changes
+
+          git remote set-url origin https://github.com/bufoes/bufoes.github.io.git
+          git config credential.helper store
+          echo "https://${{ secrets.PAT }}:@github.com" > ~/.git-credentials
+
+          git add .
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
             git commit -m "Auto-zipped meeting folders on push"
-            git remote set-url origin https://${{ secrets.PAT }}@github.com/bufoes/bufoes.github.io.git
             git push origin main
           fi
