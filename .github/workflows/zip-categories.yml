@@ -8,10 +8,8 @@ on:
       - 'rac/**'
       - 'frc/**'
       - 'herc/**'
-    paths-ignore:
-      - 'zips/**'
-      - '.checksums/**'
-  workflow_dispatch:  # Allow manual triggering
+      - '!zips/**'  # Exclude zip directory
+      - '!.checksums/**'  # Exclude checksums directory
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -27,12 +25,12 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.PAT }}
-          persist-credentials: false  # Prevent triggering on push
+          persist-credentials: false
 
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y zip unzip p7zip-full dos2unix
+          sudo apt-get install -y zip unzip p7zip-full
 
       - name: Create validated zips
         run: |
@@ -40,27 +38,21 @@ jobs:
           mkdir -p zips .checksums
           changed=false
 
-          # Initialize directories to process
           expected_dirs=("acm" "fbos" "rac" "frc" "herc")
 
-          # Function to create and validate zip
           create_valid_zip() {
             local src_dir=$1
             local zip_file=$2
             
-            # Create temporary directory
             temp_dir=$(mktemp -d)
             trap 'rm -rf "$temp_dir"' EXIT
             
-            # Copy PDFs to temp dir (handle spaces in filenames)
             find "$src_dir" -name '*.pdf' -exec cp {} "$temp_dir" \;
             
-            # Create zip with maximum compression
             (cd "$temp_dir" && zip -9 -r "$OLDPWD/$zip_file" .)
             
-            # Validate the zip
             if ! unzip -tq "$zip_file"; then
-              echo "ERROR: Created invalid ZIP file, trying 7zip fallback..."
+              echo "ERROR: Created invalid ZIP file, trying 7zip..."
               7z a -tzip "$zip_file" "$temp_dir/*"
               if ! unzip -tq "$zip_file"; then
                 echo "ERROR: Failed to create valid ZIP file"
@@ -69,32 +61,24 @@ jobs:
             fi
           }
 
-          # Process each directory
           for dir in "${expected_dirs[@]}"; do
             echo "Processing $dir..."
             hash_file=".checksums/$dir.sha"
             zip_file="zips/$dir.zip"
 
-            # Skip if directory doesn't exist
             if [ ! -d "$dir" ]; then
               echo "Directory $dir does not exist"
-              # Clean up orphaned files
               [ -f "$zip_file" ] && rm -f "$zip_file" && changed=true
               [ -f "$hash_file" ] && rm -f "$hash_file" && changed=true
               continue
             fi
 
-            # Compute current hash of PDFs
             current_hash=$(find "$dir" -type f -name "*.pdf" -print0 2>/dev/null | \
               xargs -0 stat --format '%n %s' 2>/dev/null | sha256sum | cut -d' ' -f1 || true)
 
-            # Get previous hash if exists
             previous_hash=""
-            if [ -f "$hash_file" ]; then
-              previous_hash=$(cat "$hash_file")
-            fi
+            [ -f "$hash_file" ] && previous_hash=$(cat "$hash_file")
 
-            # Check if update needed
             if [ ! -f "$zip_file" ] || [ "$current_hash" != "$previous_hash" ] || \
                { [ -f "$zip_file" ] && ! unzip -tq "$zip_file"; }; then
               echo "Update needed for $dir"
@@ -116,25 +100,14 @@ jobs:
             fi
           done
 
-          # Only commit if changes were made
           if [ "$changed" = true ]; then
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            
-            # Configure git to prevent line ending issues
             git config core.autocrlf false
-            git config core.safecrlf true
 
-            # Handle line endings in zip files
-            find zips -type f -name "*.zip" -exec dos2unix -f {} \; || true
-
-            # Stage changes
-            git add .checksums zips
-            
-            # Create commit with skip-ci marker
+            git add .checksums zip
             git commit -m "Auto-update: Regenerated ZIP files [skip ci]" || exit 0
             
-            # Push changes without triggering workflow
             git remote set-url origin "https://x-access-token:${{ secrets.PAT }}@github.com/${{ github.repository }}"
             git push origin HEAD
           else
