@@ -22,9 +22,11 @@ jobs:
           token: ${{ secrets.PAT }}
 
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y zip
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zip unzip
 
-      - name: Create or update zips
+      - name: Create or update zips with validation
         run: |
           set -euo pipefail
           mkdir -p zips .checksums
@@ -33,6 +35,19 @@ jobs:
           # Initialize array of directories we expect to process
           expected_dirs=("acm" "fbos" "rac" "frc" "herc")
 
+          # Function to validate zip files
+          validate_zip() {
+            local zip_file=$1
+            echo "Validating ZIP file: $zip_file"
+            if ! unzip -tq "$zip_file"; then
+              echo "❌ Invalid ZIP file detected, regenerating..."
+              rm -f "$zip_file"
+              return 1
+            fi
+            echo "✅ ZIP file validated successfully"
+            return 0
+          }
+
           # Process each directory
           for dir in "${expected_dirs[@]}"; do
             echo "Processing $dir..."
@@ -40,27 +55,24 @@ jobs:
             zip_file="zips/$dir.zip"
             needs_zip=false
 
+            # Validate existing zip file if it exists
+            if [ -f "$zip_file" ]; then
+              if ! validate_zip "$zip_file"; then
+                needs_zip=true
+                changed=true
+              fi
+            else
+              echo "Zip file missing for $dir"
+              needs_zip=true
+            fi
+
             # Check if directory exists
             if [ ! -d "$dir" ]; then
               echo "Directory $dir does not exist"
               # Remove zip and checksum if they exist
-              if [ -f "$zip_file" ]; then
-                echo "Removing orphaned zip file: $zip_file"
-                rm -f "$zip_file"
-                changed=true
-              fi
-              if [ -f "$hash_file" ]; then
-                echo "Removing orphaned checksum file: $hash_file"
-                rm -f "$hash_file"
-                changed=true
-              fi
+              [ -f "$zip_file" ] && rm -f "$zip_file" && changed=true
+              [ -f "$hash_file" ] && rm -f "$hash_file" && changed=true
               continue
-            fi
-
-            # Check if zip is missing
-            if [ ! -f "$zip_file" ]; then
-              echo "Zip file missing for $dir"
-              needs_zip=true
             fi
 
             # Compute current hash of PDFs
@@ -81,7 +93,23 @@ jobs:
               
               if [ "$pdf_count" -gt 0 ]; then
                 echo "Creating/updating zip with $pdf_count PDF(s) from $dir"
-                (cd "$dir" && zip -r "../$zip_file" . -i '*.pdf' -x '*.zip')
+                
+                # Create temp directory for zipping
+                temp_dir=$(mktemp -d)
+                trap 'rm -rf "$temp_dir"' EXIT
+                
+                # Copy PDFs to temp directory to ensure clean zip creation
+                find "$dir" -type f -name "*.pdf" -exec cp {} "$temp_dir" \;
+                
+                # Create zip file with compression (-9 for maximum compression)
+                (cd "$temp_dir" && zip -9 -r "$OLDPWD/$zip_file" .)
+                
+                # Verify the newly created zip
+                if ! validate_zip "$zip_file"; then
+                  echo "❌ Failed to create valid ZIP file"
+                  exit 1
+                fi
+                
                 ls -lh "$zip_file"
               else
                 echo "No PDFs found in $dir, removing zip if exists"
@@ -110,7 +138,7 @@ jobs:
 
             git add .checksums zips
             if ! git diff --cached --quiet; then
-              git commit -m "Auto-update: Regenerated missing or outdated ZIPs"
+              git commit -m "Auto-update: Regenerated ZIP files with validation"
               git remote set-url origin https://x-access-token:${{ secrets.PAT }}@github.com/${{ github.repository }}
               
               # Push with retry logic
