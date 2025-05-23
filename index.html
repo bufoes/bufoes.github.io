@@ -24,6 +24,11 @@ title: Bahria Faculty of Engineering Sciences Meeting Portal
       text-align: center;
     }
 
+    header h1 {
+      margin: 0;
+      font-size: 1.8rem;
+    }
+
     main {
       max-width: 900px;
       margin: 2rem auto;
@@ -55,14 +60,16 @@ title: Bahria Faculty of Engineering Sciences Meeting Portal
 
     summary::before {
       content: "▶";
-      display: inline-block;
-      margin-right: 10px;
-      transform: rotate(0deg);
-      transition: transform 0.2s ease;
+      margin-right: 0.5rem;
+      transition: transform 0.3s;
     }
 
     details[open] summary::before {
       transform: rotate(90deg);
+    }
+
+    summary:hover {
+      background-color: #1a4d8f;
     }
 
     .download-all {
@@ -90,6 +97,9 @@ title: Bahria Faculty of Engineering Sciences Meeting Portal
     li {
       padding: 0.5rem 0;
       border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     li:last-child {
@@ -115,55 +125,81 @@ title: Bahria Faculty of Engineering Sciences Meeting Portal
 </head>
 <body>
 
-  <header>
-    <h1>{{ page.title }}</h1>
-  </header>
+<header>
+  <h1>{{ page.title }}</h1>
+</header>
 
-  <main>
-    {% assign categories = "acm,fbos,rac,frc,herc" | split: "," %}
+<main>
+  {% assign categories = "acm,fbos,rac,frc,herc" | split: "," %}
+  {% for cat in categories %}
+    {% assign folder_path = cat | prepend: '/' | append: '/' %}
+    {% assign filtered_pdfs = site.static_files | where: "extname", ".pdf" | where_exp: "file", "file.path contains folder_path" | sort: "modified_time" | reverse %}
+    
+    <details>
+      <summary>
+        {{ cat | upcase }} Meetings ({{ filtered_pdfs.size }})
+        {% if filtered_pdfs.size > 0 %}
+          <a href="#" class="download-all" onclick="downloadAllPDFs(event, '{{ cat }}')">Download All</a>
+        {% endif %}
+      </summary>
+      <ul>
+        {% if filtered_pdfs.size > 0 %}
+          {% for pdf in filtered_pdfs %}
+            {% assign filename = pdf.name | remove: '.pdf' %}
+            {% assign parts = filename | split: '_' %}
+            {% assign number_raw = parts[1] | plus: 0 %}
+            {% assign last_digit = number_raw | modulo: 10 %}
+            {% assign last_two = number_raw | modulo: 100 %}
+            {% if last_two >= 11 and last_two <= 13 %}
+              {% assign suffix = "th" %}
+            {% else %}
+              {% case last_digit %}
+                {% when 1 %}{% assign suffix = "st" %}
+                {% when 2 %}{% assign suffix = "nd" %}
+                {% when 3 %}{% assign suffix = "rd" %}
+                {% else %}{% assign suffix = "th" %}
+              {% endcase %}
+            {% endif %}
+            <li>
+              <a href="{{ pdf.path | relative_url }}" download="{{ pdf.name }}" target="_blank">
+                {{ cat | upcase }} {{ number_raw }}{{ suffix }} Minutes
+              </a>
+            </li>
+          {% endfor %}
+        {% else %}
+          <li class="no-files">No meetings found for {{ cat | upcase }}</li>
+        {% endif %}
+      </ul>
+    </details>
+  {% endfor %}
+</main>
 
-    {% for cat in categories %}
-      {% assign folder_path = cat | prepend: '/' | append: '/' %}
-      {% assign filtered_pdfs = site.static_files | 
-                                where: "extname", ".pdf" | 
-                                where_exp: "file", "file.path contains folder_path" |
-                                sort: "modified_time" |
-                                reverse %}
-      
-      <details>
-        <summary>
-          {{ cat | upcase }} Meetings ({{ filtered_pdfs.size }})
-          {% if filtered_pdfs.size > 0 %}
-            <a href="{{ folder_path }}{{ cat }}.zip" class="download-all" onclick="event.stopPropagation();">
-              Download All
-            </a>
-          {% endif %}
-        </summary>
-        
-        <ul>
-          {% if filtered_pdfs.size > 0 %}
-            {% for pdf in filtered_pdfs %}
-              {% assign filename = pdf.name | remove: '.pdf' %}
-              {% assign match = filename | split: '-' %}
-              {% assign meeting_number = match[1] %}
-              <li>
-                <a href="{{ pdf.path | relative_url }}" download="{{ pdf.name }}" target="_blank">
-                  {{ cat | upcase }} {{ meeting_number }}{% case meeting_number %}
-                    {% when '1' %}st
-                    {% when '2' %}nd
-                    {% when '3' %}rd
-                    {% else %}th
-                  {% endcase %} Minutes
-                </a>
-              </li>
-            {% endfor %}
-          {% else %}
-            <li class="no-files">No meetings found for {{ cat | upcase }}</li>
-          {% endif %}
-        </ul>
-      </details>
-    {% endfor %}
-  </main>
+<script>
+  function downloadAllPDFs(event, category) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const detailsElement = event.target.closest('details');
+    const pdfLinks = detailsElement.querySelectorAll('ul a[download]');
+
+    if (!confirm(`Download all ${pdfLinks.length} PDFs from ${category.toUpperCase()}?`)) {
+      return;
+    }
+
+    pdfLinks.forEach((link, index) => {
+      setTimeout(() => {
+        const downloadLink = document.createElement('a');
+        downloadLink.href = link.href;
+        downloadLink.download = link.download;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+      }, index * 1000);
+    });
+
+    alert(`Started downloading ${pdfLinks.length} files from ${category.toUpperCase()}.`);
+  }
+</script>
 
 </body>
 </html>
