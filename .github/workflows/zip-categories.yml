@@ -17,7 +17,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          token: ${{ secrets.PERSONAL_TOKEN }}
+          token: ${{ secrets.PAT }}
 
       - name: Zip folders
         run: |
@@ -28,11 +28,12 @@ jobs:
           done
 
       - name: Commit and push ZIP files
+        env:
+          PAT: ${{ secrets.PAT }}
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
+          git remote set-url origin https://x-access-token:${PAT}@github.com/${{ github.repository }}
           git add acm/acm.zip fbos/fbos.zip rac/rac.zip frc/frc.zip herc/herc.zip
           git diff --cached --quiet || git commit -m "Auto-zipped meeting folders"
           git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT }}
